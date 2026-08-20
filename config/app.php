@@ -52,7 +52,9 @@ return [
     |
     */
 
-    'url' => is_string(env('APP_URL')) ? trim(env('APP_URL')) : 'https://tntsregistrations.onrender.com',
+    'url' => (is_string(env('APP_URL')) && str_contains(env('APP_URL'), '://'))
+    ? env('APP_URL')
+    : 'https://tntsregistrations.onrender.com',
 
     /*
     |--------------------------------------------------------------------------

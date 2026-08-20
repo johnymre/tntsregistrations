@@ -1,13 +1,13 @@
 #!/bin/sh
 set -e
 
-# Clear existing caches to prevent malformed URI parsing during build
+# Clear all cached states instead of compiling them on startup
 php artisan config:clear
 php artisan route:clear
 php artisan view:clear
 
-# Run database migrations
+# Run migrations
 php artisan migrate --force
 
-# Start application server
+# Serve application
 exec php artisan serve --host=0.0.0.0 --port=10000
