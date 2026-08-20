@@ -1,7 +1,9 @@
 # Stage 1: Build Vue/JS frontend assets
 FROM node:20-alpine AS frontend
 WORKDIR /app
+RUN apt-get update && apt-get install -y nodejs npm
 COPY package*.json ./
+RUN npm install
 RUN npm ci
 COPY . .
 RUN npm run build
