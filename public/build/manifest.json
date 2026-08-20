@@ -1,0 +1,142 @@
+{
+  "_AppLayout-D1ogREFP.js": {
+    "file": "assets/AppLayout-D1ogREFP.js",
+    "name": "AppLayout",
+    "imports": [
+      "resources/js/app.ts"
+    ]
+  },
+  "_IdCardFace-DLpuw7Lc.js": {
+    "file": "assets/IdCardFace-DLpuw7Lc.js",
+    "name": "IdCardFace",
+    "imports": [
+      "resources/js/app.ts"
+    ]
+  },
+  "resources/css/app.css": {
+    "file": "assets/app-DfU2tdbM.css",
+    "name": "app",
+    "names": [
+      "app.css"
+    ],
+    "src": "resources/css/app.css",
+    "isEntry": true
+  },
+  "resources/js/app.ts": {
+    "file": "assets/app-C84Qgip1.js",
+    "name": "app",
+    "src": "resources/js/app.ts",
+    "isEntry": true,
+    "dynamicImports": [
+      "resources/js/pages/Auth/Login.vue",
+      "resources/js/pages/Auth/Register.vue",
+      "resources/js/pages/Dashboard/Dashboard.vue",
+      "resources/js/pages/Dashboard/IdMakerApp.vue",
+      "resources/js/pages/Dashboard/IdMakerPrint.vue",
+      "resources/js/pages/Dashboard/SchoolYear.vue",
+      "resources/js/pages/Dashboard/Sectioning.vue",
+      "resources/js/pages/Dashboard/Students.vue",
+      "resources/js/pages/Registrations/Create.vue",
+      "resources/js/pages/Welcome.vue"
+    ]
+  },
+  "resources/js/pages/Auth/Login.vue": {
+    "file": "assets/Login-DBDSHRQd.js",
+    "name": "Login",
+    "src": "resources/js/pages/Auth/Login.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.ts"
+    ]
+  },
+  "resources/js/pages/Auth/Register.vue": {
+    "file": "assets/Register-35U1ruO0.js",
+    "name": "Register",
+    "src": "resources/js/pages/Auth/Register.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.ts"
+    ]
+  },
+  "resources/js/pages/Dashboard/Dashboard.vue": {
+    "file": "assets/Dashboard-BJ4Y1BGF.js",
+    "name": "Dashboard",
+    "src": "resources/js/pages/Dashboard/Dashboard.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.ts",
+      "_AppLayout-D1ogREFP.js"
+    ]
+  },
+  "resources/js/pages/Dashboard/IdMakerApp.vue": {
+    "file": "assets/IdMakerApp-DNiaJj0P.js",
+    "name": "IdMakerApp",
+    "src": "resources/js/pages/Dashboard/IdMakerApp.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.ts",
+      "_AppLayout-D1ogREFP.js",
+      "_IdCardFace-DLpuw7Lc.js"
+    ]
+  },
+  "resources/js/pages/Dashboard/IdMakerPrint.vue": {
+    "file": "assets/IdMakerPrint-SacS-Z4e.js",
+    "name": "IdMakerPrint",
+    "src": "resources/js/pages/Dashboard/IdMakerPrint.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.ts",
+      "_IdCardFace-DLpuw7Lc.js"
+    ],
+    "css": [
+      "assets/IdMakerPrint-C7ewSC_9.css"
+    ]
+  },
+  "resources/js/pages/Dashboard/SchoolYear.vue": {
+    "file": "assets/SchoolYear-8bwVTRvb.js",
+    "name": "SchoolYear",
+    "src": "resources/js/pages/Dashboard/SchoolYear.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.ts"
+    ]
+  },
+  "resources/js/pages/Dashboard/Sectioning.vue": {
+    "file": "assets/Sectioning-D0gzPG3b.js",
+    "name": "Sectioning",
+    "src": "resources/js/pages/Dashboard/Sectioning.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.ts",
+      "_AppLayout-D1ogREFP.js"
+    ]
+  },
+  "resources/js/pages/Dashboard/Students.vue": {
+    "file": "assets/Students-D39hEfcM.js",
+    "name": "Students",
+    "src": "resources/js/pages/Dashboard/Students.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.ts",
+      "_AppLayout-D1ogREFP.js"
+    ]
+  },
+  "resources/js/pages/Registrations/Create.vue": {
+    "file": "assets/Create-DsyGHqYf.js",
+    "name": "Create",
+    "src": "resources/js/pages/Registrations/Create.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.ts"
+    ]
+  },
+  "resources/js/pages/Welcome.vue": {
+    "file": "assets/Welcome-DYXg62Ph.js",
+    "name": "Welcome",
+    "src": "resources/js/pages/Welcome.vue",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.ts"
+    ]
+  }
+}

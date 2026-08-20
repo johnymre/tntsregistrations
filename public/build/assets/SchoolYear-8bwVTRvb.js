@@ -1,0 +1,1 @@
+import{f as e,h as t,x as n,y as r}from"./app-C84Qgip1.js";var i=r({__name:`SchoolYear`,setup(r){return(r,i)=>(n(),t(`div`,null,[...i[0]||=[e(`h1`,null,`School Year`,-1)]]))}});export{i as default};
