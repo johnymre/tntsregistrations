@@ -1,18 +1,47 @@
-<script setup>
+<script setup lang="ts">
+import { Link, router } from '@inertiajs/vue3'
 import { ref, watch } from 'vue'
-import { router, Link } from '@inertiajs/vue3'
 import AppLayout from '../../layouts/AppLayout.vue'
 
-const props = defineProps({
-  registrations: Object, // Laravel paginator: { data, links, current_page, ... }
-  filters: Object,
-})
+interface Registration {
+  id: number
+  first_name: string
+  middle_name?: string
+  last_name: string
+  school_year?: string
+  section?: string
+  address: string
+  birthday?: string
+  parent_name: string
+  parent_contact_number: string
+  photo_url?: string
+}
+
+interface PaginationLink {
+  url: string | null
+  label: string
+  active: boolean
+}
+
+interface RegistrationsPaginator {
+  data: Registration[]
+  links: PaginationLink[]
+  from: number
+  to: number
+  total: number
+  last_page: number
+}
+
+const props = defineProps<{
+  registrations: RegistrationsPaginator
+  filters?: { search?: string }
+}>()
 
 const search = ref(props.filters?.search ?? '')
-let debounceTimer = null
+let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
-watch(search, (value) => {
-  clearTimeout(debounceTimer)
+watch(search, (value: string) => {
+  if (debounceTimer) { clearTimeout(debounceTimer) }
   debounceTimer = setTimeout(() => {
     router.get('/students', { search: value || undefined }, {
       preserveState: true,
@@ -21,12 +50,12 @@ watch(search, (value) => {
   }, 350)
 })
 
-function initials(first, last) {
+function initials(first?: string, last?: string): string {
   return `${first?.[0] ?? ''}${last?.[0] ?? ''}`.toUpperCase()
 }
 
-function formatDate(dateStr) {
-  if (!dateStr) return ''
+function formatDate(dateStr?: string): string {
+  if (!dateStr) { return '' }
   return new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
 }
 </script>
@@ -48,7 +77,6 @@ function formatDate(dateStr) {
           />
         </div>
       </div>
-
       <table class="w-full text-sm">
         <thead>
           <tr class="text-left text-xs text-gray-400 border-b border-gray-100">
@@ -88,7 +116,6 @@ function formatDate(dateStr) {
           </tr>
         </tbody>
       </table>
-
       <!-- Pagination -->
       <div v-if="registrations.last_page > 1" class="flex items-center justify-between mt-6 pt-4 border-t border-gray-100">
         <p class="text-xs text-gray-400">
@@ -99,16 +126,18 @@ function formatDate(dateStr) {
             <span
               v-if="!link.url"
               class="px-3 py-1.5 h-8 min-w-[2rem] flex items-center justify-center text-xs text-gray-300 rounded-xl select-none"
-              v-html="link.label"
-            ></span>
+            >
+              <span v-html="link.label"></span>
+            </span>
             <Link
               v-else
               :href="link.url"
               preserve-scroll
               class="px-3 py-1.5 h-8 min-w-[2rem] flex items-center justify-center text-xs rounded-xl transition font-medium"
               :class="link.active ? 'bg-blue-600 text-white font-semibold shadow-sm' : 'text-gray-600 hover:bg-gray-100'"
-              v-html="link.label"
-            />
+            >
+              <span v-html="link.label"></span>
+            </Link>
           </template>
         </div>
       </div>

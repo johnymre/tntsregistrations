@@ -1,6 +1,6 @@
 <script setup>
-import { reactive, ref, onUnmounted } from 'vue'
 import { useForm, usePage } from '@inertiajs/vue3'
+import { reactive, ref, onUnmounted } from 'vue'
 import { watchEffect } from 'vue'
 
 const page = usePage()
@@ -36,15 +36,18 @@ const isCameraActive = ref(false)
 
 async function openWebcamModal() {
   showWebcamModal.value = true
+
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
       video: { width: { ideal: 640 }, height: { ideal: 640 }, facingMode: 'user' },
       audio: false,
     })
     mediaStream.value = stream
+
     if (videoRef.value) {
       videoRef.value.srcObject = stream
     }
+
     isCameraActive.value = true
   } catch (err) {
     alert('Unable to access camera. Please allow camera permissions in your browser or use file upload instead.')
@@ -57,6 +60,7 @@ function stopWebcam() {
     mediaStream.value.getTracks().forEach((track) => track.stop())
     mediaStream.value = null
   }
+
   isCameraActive.value = false
 }
 
@@ -66,7 +70,9 @@ function closeWebcamModal() {
 }
 
 function capturePhoto() {
-  if (!videoRef.value || !canvasRef.value) return
+  if (!videoRef.value || !canvasRef.value) {
+return
+}
 
   const video = videoRef.value
   const canvas = canvasRef.value
@@ -81,13 +87,19 @@ function capturePhoto() {
   context.drawImage(video, startX, startY, size, size, 0, 0, size, size)
 
   canvas.toBlob((blob) => {
-    if (!blob) return
+    if (!blob) {
+return
+}
+
     const file = new File([blob], `webcam-${Date.now()}.jpg`, { type: 'image/jpeg' })
     
     form.photo = file
     form.clearErrors('photo')
 
-    if (photoPreview.value) URL.revokeObjectURL(photoPreview.value)
+    if (photoPreview.value) {
+URL.revokeObjectURL(photoPreview.value)
+}
+
     photoPreview.value = URL.createObjectURL(blob)
 
     closeWebcamModal()
@@ -95,7 +107,9 @@ function capturePhoto() {
 }
 
 function syncParentAddress() {
-  if (sameAddress.value) form.parent_address = form.address
+  if (sameAddress.value) {
+form.parent_address = form.address
+}
 }
 
 function onPhotoChange(event) {
@@ -103,15 +117,25 @@ function onPhotoChange(event) {
   form.photo = file
   form.clearErrors('photo')
 
-  if (photoPreview.value) URL.revokeObjectURL(photoPreview.value)
+  if (photoPreview.value) {
+URL.revokeObjectURL(photoPreview.value)
+}
+
   photoPreview.value = file ? URL.createObjectURL(file) : null
 }
 
 function removePhoto() {
   form.photo = null
-  if (photoPreview.value) URL.revokeObjectURL(photoPreview.value)
+
+  if (photoPreview.value) {
+URL.revokeObjectURL(photoPreview.value)
+}
+
   photoPreview.value = null
-  if (fileInput.value) fileInput.value.value = ''
+
+  if (fileInput.value) {
+fileInput.value.value = ''
+}
 }
 
 function validate() {
@@ -128,8 +152,11 @@ function validate() {
   }
 
   const clientErrors = {}
+
   for (const [field, message] of Object.entries(required)) {
-    if (!String(form[field] ?? '').trim()) clientErrors[field] = message
+    if (!String(form[field] ?? '').trim()) {
+clientErrors[field] = message
+}
   }
 
   if (form.parent_contact_number && !/^[0-9+\-\s()]{7,20}$/.test(form.parent_contact_number)) {
@@ -138,6 +165,7 @@ function validate() {
 
   if (form.birthday) {
     const date = new Date(form.birthday)
+
     if (Number.isNaN(date.getTime()) || date > new Date()) {
       clientErrors.birthday = 'Enter a valid birthday'
     }
@@ -146,19 +174,24 @@ function validate() {
   if (form.photo && !/^image\/(jpeg|png|webp)$/.test(form.photo.type)) {
     clientErrors.photo = 'Photo must be a JPG, PNG, or WEBP file'
   }
+
   if (form.photo && form.photo.size > 20 * 1024 * 1024) {
     clientErrors.photo = 'Photo must be under 20MB'
   }
 
   if (Object.keys(clientErrors).length) {
     form.setError(clientErrors)
+
     return false
   }
+
   return true
 }
 
 function submit() {
-  if (!validate()) return
+  if (!validate()) {
+return
+}
 
   form.post('/registrations', {
     onSuccess: () => {

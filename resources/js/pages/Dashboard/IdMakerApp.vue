@@ -1,24 +1,71 @@
-<script setup>
-import { ref, computed, watch, onUnmounted } from 'vue'
+<script setup lang="ts">
 import { router, usePage } from '@inertiajs/vue3'
-import AppLayout from '../../layouts/AppLayout.vue'
+import { computed, onUnmounted, ref, watch } from 'vue'
 import IdCardFace from '../../components/IdCardFace.vue'
+import AppLayout from '../../layouts/AppLayout.vue'
 
-// --- PROPS ---
-const props = defineProps({
-  template: { type: Object, default: () => ({}) },
-  sample: { type: Object, default: null },
-  students: { type: Array, default: () => [] },
-  done_student_ids: { type: Array, default: () => [] },
-  grades: { type: Array, default: () => [] },
-  sections: { type: Array, default: () => [] },
-  filters: { type: Object, default: () => ({ grade: '', section: '', status: 'pending', search: '' }) },
-  counts: { type: Object, default: () => ({ pending: 0, completed: 0, total: 0 }) },
+interface Field {
+  id: number | string
+  key: string
+  label: string
+  type: string
+  text?: string
+  xPct?: number
+  yPct?: number
+  fontSize?: number
+  bold?: boolean
+  color?: string
+  widthPct?: number
+  align?: 'left' | 'center' | 'right'
+  borderRadius?: number
+}
+
+interface Student {
+  id: number
+  first_name: string
+  last_name: string
+  grade_level?: string
+  section?: string
+  adviser?: string
+  adviser_name?: string
+  school_year?: string
+  address?: string
+  birthday?: string
+  parent_name?: string
+  parent_address?: string
+  parent_contact_number?: string
+  photo_url?: string
+}
+
+interface Template {
+  front_image_url?: string
+  back_image_url?: string
+  front_layout?: Field[]
+  back_layout?: Field[]
+}
+
+const props = withDefaults(defineProps<{
+  template?: Template
+  sample?: Student | null
+  students?: Student[] | { data: Student[] }
+  done_student_ids?: number[]
+  grades?: string[]
+  sections?: string[]
+  filters?: { grade?: string; section?: string; status?: string; search?: string }
+  counts?: { pending: number; completed: number; total: number }
+}>(), {
+  template: () => ({}),
+  sample: null,
+  students: () => [],
+  done_student_ids: () => [],
+  grades: () => [],
+  sections: () => [],
+  filters: () => ({ grade: '', section: '', status: 'pending', search: '' }),
+  counts: () => ({ pending: 0, completed: 0, total: 0 }),
 })
 
 const page = usePage()
 
-// --- CONSTANTS ---
 const CARD_WIDTH = 340
 const PHOTO_SIZE_PCT = (1 / 2.125) * 100
 const ITEMS_PER_PAGE = 20
@@ -37,45 +84,41 @@ const AVAILABLE_FIELDS = [
   { key: 'photo', label: 'Photo', type: 'photo' },
 ]
 
-// --- CANVAS & TEMPLATE STATE ---
-const frontImage = computed(() => page.props.template?.front_image_url)
-const backImage = computed(() => page.props.template?.back_image_url)
+const frontImage = computed(() => (page.props.template as Template)?.front_image_url)
+const backImage = computed(() => (page.props.template as Template)?.back_image_url)
 
-const front = ref(props.template?.front_layout?.length ? JSON.parse(JSON.stringify(props.template.front_layout)) : [])
-const back = ref(props.template?.back_layout?.length ? JSON.parse(JSON.stringify(props.template.back_layout)) : [])
-const activeSample = ref(props.sample)
+const front = ref<Field[]>(props.template?.front_layout?.length ? JSON.parse(JSON.stringify(props.template.front_layout)) : [])
+const back = ref<Field[]>(props.template?.back_layout?.length ? JSON.parse(JSON.stringify(props.template.back_layout)) : [])
 
-const selected = ref(null)
+const activeSample = ref<Student | null>(props.sample)
+const selected = ref<Field | null>(null)
 const saving = ref(false)
-const frontCardEl = ref(null)
-const backCardEl = ref(null)
 
-const dragState = ref(null)
-const resizeState = ref(null)
+const frontCardEl = ref<{ $el: HTMLElement } | null>(null)
+const backCardEl = ref<{ $el: HTMLElement } | null>(null)
 
-// --- FILTERS & TABLE STATE ---
+const dragState = ref<{ side: 'front' | 'back'; id: number | string; moved: boolean } | null>(null)
+const resizeState = ref<{ side: 'front' | 'back'; id: number | string; startX: number; startWidthPct: number } | null>(null)
+
 const selectedGradeFilter = ref(props.filters?.grade || props.grades?.[0] || '')
 const selectedSectionFilter = ref(props.filters?.section || props.sections?.[0] || '')
 const statusFilter = ref(props.filters?.status || 'pending')
 const studentSearch = ref(props.filters?.search || '')
 
 const currentPage = ref(1)
-const checkedStudentIds = ref(new Set())
+const checkedStudentIds = ref(new Set<number>())
 const showMarkDoneModal = ref(false)
+let searchTimeout: ReturnType<typeof setTimeout> | null = null
 
-let searchTimeout = null
-
-// Update state when Inertia reloads partial props
 watch(() => props.filters, (newFilters) => {
   if (newFilters) {
-    if (newFilters.grade !== undefined) selectedGradeFilter.value = newFilters.grade
-    if (newFilters.section !== undefined) selectedSectionFilter.value = newFilters.section
-    if (newFilters.status !== undefined) statusFilter.value = newFilters.status
+    if (newFilters.grade !== undefined) { selectedGradeFilter.value = newFilters.grade }
+    if (newFilters.section !== undefined) { selectedSectionFilter.value = newFilters.section }
+    if (newFilters.status !== undefined) { statusFilter.value = newFilters.status }
   }
 }, { deep: true })
 
-// Backend Filter Requests
-function fetchFilteredData() {
+function fetchFilteredData(): void {
   router.get(
     '/id-maker',
     {
@@ -93,32 +136,30 @@ function fetchFilteredData() {
   )
 }
 
-function onGradeChange() {
+function onGradeChange(): void {
   selectedSectionFilter.value = ''
   fetchFilteredData()
 }
 
-function onSectionOrStatusChange() {
+function onSectionOrStatusChange(): void {
   currentPage.value = 1
   fetchFilteredData()
 }
 
 watch(studentSearch, () => {
-  clearTimeout(searchTimeout)
+  if (searchTimeout) { clearTimeout(searchTimeout) }
   searchTimeout = setTimeout(() => {
     currentPage.value = 1
     fetchFilteredData()
   }, 300)
 })
 
-// --- COMPUTED: STUDENTS ---
-const studentList = computed(() => {
-  if (Array.isArray(props.students)) return props.students
+const studentList = computed<Student[]>(() => {
+  if (Array.isArray(props.students)) { return props.students }
   return props.students?.data || []
 })
 
 const dbDoneStudentIds = computed(() => new Set((props.done_student_ids || []).map(Number)))
-
 const totalPages = computed(() => Math.ceil(studentList.value.length / ITEMS_PER_PAGE) || 1)
 
 const paginatedStudents = computed(() => {
@@ -130,7 +171,7 @@ const checkedDoneIds = computed(() => Array.from(checkedStudentIds.value).filter
 const checkedPendingIds = computed(() => Array.from(checkedStudentIds.value).filter((id) => !dbDoneStudentIds.value.has(id)))
 
 const isAllSelected = computed(() => {
-  if (paginatedStudents.value.length === 0) return false
+  if (paginatedStudents.value.length === 0) { return false }
   return paginatedStudents.value.every((s) => checkedStudentIds.value.has(s.id))
 })
 
@@ -141,11 +182,15 @@ const printUrl = computed(() => {
   return '#'
 })
 
-const printButtonText = computed(() => {
-  return `Print Selected IDs (${checkedPendingIds.value.length})`
-})
+const printButtonText = computed(() => `Print Selected IDs (${checkedPendingIds.value.length})`)
 
-const previewValues = computed(() => ({
+function formatDate(d?: string): string | null {
+  if (!d) { return null }
+  const date = new Date(d)
+  return Number.isNaN(date.getTime()) ? null : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+const previewValues = computed<Record<string, string | null>>(() => ({
   full_name: activeSample.value ? `${activeSample.value.first_name} ${activeSample.value.last_name}` : null,
   grade_level: activeSample.value?.grade_level ?? null,
   section: activeSample.value?.section ?? null,
@@ -159,27 +204,19 @@ const previewValues = computed(() => ({
   photo_url: activeSample.value?.photo_url ?? null,
 }))
 
-// --- HELPERS ---
-function clamp(v, min, max) {
+function clamp(v: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, v))
 }
 
-function formatDate(d) {
-  if (!d) return null
-  const date = new Date(d)
-  return Number.isNaN(date.getTime()) ? null : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-}
-
-function isInsideRect(event, rect) {
+function isInsideRect(event: MouseEvent, rect: DOMRect): boolean {
   return event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom
 }
 
-// --- TABLE & SELECTION ACTIONS ---
-function selectStudent(s) {
+function selectStudent(s: Student): void {
   activeSample.value = s
 }
 
-function toggleSelectAll() {
+function toggleSelectAll(): void {
   if (isAllSelected.value) {
     paginatedStudents.value.forEach((s) => checkedStudentIds.value.delete(s.id))
   } else {
@@ -187,7 +224,7 @@ function toggleSelectAll() {
   }
 }
 
-function toggleStudentCheck(studentId) {
+function toggleStudentCheck(studentId: number): void {
   if (checkedStudentIds.value.has(studentId)) {
     checkedStudentIds.value.delete(studentId)
   } else {
@@ -195,16 +232,16 @@ function toggleStudentCheck(studentId) {
   }
 }
 
-function confirmMarkDone() {
+function confirmMarkDone(): void {
   showMarkDoneModal.value = true
 }
 
-function markActiveAsDone() {
+function markActiveAsDone(): void {
   const idsToMark = checkedPendingIds.value.length > 0
     ? checkedPendingIds.value
     : (activeSample.value && !dbDoneStudentIds.value.has(activeSample.value.id) ? [activeSample.value.id] : [])
 
-  if (idsToMark.length === 0) return
+  if (idsToMark.length === 0) { return }
 
   router.post('/id-maker/mark-done', { student_ids: idsToMark }, {
     preserveScroll: true,
@@ -215,12 +252,12 @@ function markActiveAsDone() {
   })
 }
 
-function unmarkSelectedAsDone() {
+function unmarkSelectedAsDone(): void {
   const idsToUnmark = checkedDoneIds.value.length > 0
     ? checkedDoneIds.value
     : (activeSample.value && dbDoneStudentIds.value.has(activeSample.value.id) ? [activeSample.value.id] : [])
 
-  if (idsToUnmark.length === 0) return
+  if (idsToUnmark.length === 0) { return }
 
   router.post('/id-maker/unmark-done', { student_ids: idsToUnmark }, {
     preserveScroll: true,
@@ -230,27 +267,32 @@ function unmarkSelectedAsDone() {
   })
 }
 
-// --- CANVAS EDITING ACTIONS ---
-function remove(f) {
+function remove(f: Field): void {
   front.value = front.value.filter((x) => x.id !== f.id)
   back.value = back.value.filter((x) => x.id !== f.id)
-  if (selected.value?.id === f.id) selected.value = null
+  if (selected.value?.id === f.id) { selected.value = null }
 }
 
-function onPanelDragStart(event, field) {
-  event.dataTransfer.setData('text/plain', JSON.stringify({ mode: 'new', key: field.key, label: field.label, type: field.type }))
+function onPanelDragStart(event: DragEvent, field: { key: string; label: string; type: string }): void {
+  if (event.dataTransfer) {
+    event.dataTransfer.setData('text/plain', JSON.stringify({ mode: 'new', key: field.key, label: field.label, type: field.type }))
+  }
 }
 
-function onDrop(event, side) {
+function onDrop(event: DragEvent, side: 'front' | 'back'): void {
+  if (!event.dataTransfer) { return }
   const raw = event.dataTransfer.getData('text/plain')
-  if (!raw) return
+  if (!raw) { return }
   const data = JSON.parse(raw)
-  if (data.mode !== 'new') return
-  const rect = event.currentTarget.getBoundingClientRect()
+  if (data.mode !== 'new') { return }
+
+  const target = event.currentTarget as HTMLElement
+  const rect = target.getBoundingClientRect()
   const xPct = clamp(((event.clientX - rect.left) / rect.width) * 100, 0, 96)
   const yPct = clamp(((event.clientY - rect.top) / rect.height) * 100, 0, 96)
+
   const targetArr = side === 'front' ? front : back
-  const newField = {
+  const newField: Field = {
     id: Date.now() + Math.random(),
     key: data.key,
     label: data.label,
@@ -264,14 +306,15 @@ function onDrop(event, side) {
     widthPct: data.type === 'photo' ? PHOTO_SIZE_PCT : 80,
     align: 'left',
   }
+
   targetArr.value.push(newField)
   selected.value = newField
 }
 
-function addCustomText() {
+function addCustomText(): void {
   const text = window.prompt('Enter custom text')
-  if (!text) return
-  const field = {
+  if (!text) { return }
+  const field: Field = {
     id: Date.now() + Math.random(),
     key: 'custom',
     label: 'Custom Text',
@@ -289,20 +332,22 @@ function addCustomText() {
   selected.value = field
 }
 
-function startFieldDrag(event, side, field) {
+function startFieldDrag(event: MouseEvent, side: 'front' | 'back', field: Field): void {
   event.stopPropagation()
   dragState.value = { side, id: field.id, moved: false }
   window.addEventListener('mousemove', onFieldDragMove)
   window.addEventListener('mouseup', onFieldDragEnd)
 }
 
-function onFieldDragMove(event) {
-  if (!dragState.value) return
+function onFieldDragMove(event: MouseEvent): void {
+  if (!dragState.value) { return }
   dragState.value.moved = true
+
   const frontRect = frontCardEl.value?.$el?.getBoundingClientRect()
   const backRect = backCardEl.value?.$el?.getBoundingClientRect()
-  let targetSide = null
-  let rect = null
+
+  let targetSide: 'front' | 'back' | null = null
+  let rect: DOMRect | null = null
 
   if (frontRect && isInsideRect(event, frontRect)) {
     targetSide = 'front'
@@ -312,76 +357,89 @@ function onFieldDragMove(event) {
     rect = backRect
   }
 
-  if (!targetSide) return
+  if (!targetSide || !rect) { return }
 
   const xPct = clamp(((event.clientX - rect.left) / rect.width) * 100, 0, 96)
   const yPct = clamp(((event.clientY - rect.top) / rect.height) * 100, 0, 96)
+
   const arrays = { front, back }
   const currentSide = dragState.value.side
   const sourceArr = arrays[currentSide]
-  const field = sourceArr.value.find((f) => f.id === dragState.value.id)
+  const field = sourceArr.value.find((f) => f.id === dragState.value!.id)
 
-  if (!field) return
+  if (!field) { return }
 
   field.xPct = xPct
   field.yPct = yPct
 
   if (targetSide !== currentSide) {
-    sourceArr.value = sourceArr.value.filter((f) => f.id !== dragState.value.id)
+    sourceArr.value = sourceArr.value.filter((f) => f.id !== dragState.value!.id)
     arrays[targetSide].value.push(field)
     dragState.value.side = targetSide
   }
 }
 
-function onFieldDragEnd() {
+function onFieldDragEnd(): void {
   window.removeEventListener('mousemove', onFieldDragMove)
   window.removeEventListener('mouseup', onFieldDragEnd)
+
   if (dragState.value && !dragState.value.moved) {
     const arr = dragState.value.side === 'front' ? front.value : back.value
-    const field = arr.find((f) => f.id === dragState.value.id)
-    if (field) selected.value = field
+    const field = arr.find((f) => f.id === dragState.value!.id)
+    if (field) { selected.value = field }
   }
+
   dragState.value = null
 }
 
-function startResize(event, side, field) {
+function startResize(event: MouseEvent, side: 'front' | 'back', field: Field): void {
   resizeState.value = { side, id: field.id, startX: event.clientX, startWidthPct: field.widthPct || (field.type === 'photo' ? PHOTO_SIZE_PCT : 80) }
   window.addEventListener('mousemove', onResizeMove)
   window.addEventListener('mouseup', onResizeEnd)
 }
 
-function onResizeMove(event) {
-  if (!resizeState.value) return
-  const cardEl = resizeState.value.side === 'front' ? frontCardEl.value?.$el : backCardEl.value?.$el
-  if (!cardEl) return
+function onResizeMove(event: MouseEvent): void {
+  const state = resizeState.value
+  if (!state) { return } // TypeScript now knows 'state' is NOT null below this line
+
+  const cardEl = state.side === 'front' ? frontCardEl.value?.$el : backCardEl.value?.$el
+  if (!cardEl) { return }
+
   const rect = cardEl.getBoundingClientRect()
-  const deltaPct = ((event.clientX - resizeState.value.startX) / rect.width) * 100
-  const arr = resizeState.value.side === 'front' ? front.value : back.value
-  const field = arr.find((f) => f.id === resizeState.value.id)
-  if (!field) return
-  field.widthPct = clamp(resizeState.value.startWidthPct + deltaPct, 15, 100)
+  const deltaPct = ((event.clientX - state.startX) / rect.width) * 100
+  const arr = state.side === 'front' ? front.value : back.value
+  const field = arr.find((f) => f.id === state.id)
+
+  if (!field) { return }
+
+  field.widthPct = clamp(state.startWidthPct + deltaPct, 15, 100)
 }
 
-function onResizeEnd() {
+
+function onResizeEnd(): void {
   window.removeEventListener('mousemove', onResizeMove)
   window.removeEventListener('mouseup', onResizeEnd)
   resizeState.value = null
 }
 
-function uploadBg(side, event) {
-  const file = event.target.files?.[0]
-  if (!file) return
+function uploadBg(side: 'front' | 'back', event: Event): void {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) { return }
+
   const form = new FormData()
   form.append('image', file)
+
   router.post(`/id-maker/background/${side}`, form, {
     forceFormData: true,
     preserveScroll: true,
     preserveState: true,
   })
-  event.target.value = ''
+
+  target.value = ''
 }
 
-function saveTemplate() {
+function saveTemplate(): void {
   saving.value = true
   router.post('/id-maker', {
     front_layout: front.value,
@@ -398,7 +456,7 @@ onUnmounted(() => {
   window.removeEventListener('mouseup', onFieldDragEnd)
   window.removeEventListener('mousemove', onResizeMove)
   window.removeEventListener('mouseup', onResizeEnd)
-  clearTimeout(searchTimeout)
+  if (searchTimeout) { clearTimeout(searchTimeout) }
 })
 </script>
 
@@ -428,8 +486,8 @@ onUnmounted(() => {
               :width="CARD_WIDTH"
               :interactive="true"
               :selected-id="selected?.id ?? null"
-              @field-mousedown="(e, f) => startFieldDrag(e, 'front', f)"
-              @resize-mousedown="(e, f) => startResize(e, 'front', f)"
+              @field-mousedown="(e: MouseEvent, f: Field) => startFieldDrag(e, 'front', f)"
+              @resize-mousedown="(e: MouseEvent, f: Field) => startResize(e, 'front', f)"
               @delete="remove"
             />
           </div>
@@ -452,8 +510,8 @@ onUnmounted(() => {
               :width="CARD_WIDTH"
               :interactive="true"
               :selected-id="selected?.id ?? null"
-              @field-mousedown="(e, f) => startFieldDrag(e, 'back', f)"
-              @resize-mousedown="(e, f) => startResize(e, 'back', f)"
+              @field-mousedown="(e: MouseEvent, f: Field) => startFieldDrag(e, 'back', f)"
+              @resize-mousedown="(e: MouseEvent, f: Field) => startResize(e, 'back', f)"
               @delete="remove"
             />
           </div>
@@ -473,7 +531,6 @@ onUnmounted(() => {
               v-text="'{{ ' + f.label + ' }}'"
             ></div>
           </div>
-
           <button @click="addCustomText" class="w-full text-sm font-medium text-blue-600 border border-dashed border-blue-300 rounded-lg py-2 hover:bg-blue-50 transition mb-6">
             + Add Custom Text
           </button>
@@ -481,7 +538,6 @@ onUnmounted(() => {
           <!-- Selected Field Editor Controls -->
           <div v-if="selected" class="bg-gray-50 rounded-2xl border border-gray-200 p-3 mb-4 text-xs space-y-3">
             <p class="font-semibold text-gray-700 truncate">{{ selected.label }}</p>
-
             <template v-if="selected.type !== 'photo'">
               <label class="flex items-center justify-between gap-2">
                 Font Size
@@ -491,7 +547,6 @@ onUnmounted(() => {
                 Bold Font
                 <input type="checkbox" v-model="selected.bold" class="rounded border-gray-300 text-blue-600" />
               </label>
-
               <div>
                 <div class="flex items-center justify-between mb-1.5">
                   <span>Text Box Width</span>
@@ -505,7 +560,6 @@ onUnmounted(() => {
                   class="w-full cursor-pointer accent-blue-600"
                 />
               </div>
-
               <div>
                 <p class="mb-1.5">Text Alignment Inside Box</p>
                 <div class="grid grid-cols-3 gap-1">
@@ -535,13 +589,11 @@ onUnmounted(() => {
                   </button>
                 </div>
               </div>
-
               <label class="flex items-center justify-between gap-2">
                 Text Color
                 <input type="color" v-model="selected.color" class="w-8 h-6 rounded border border-gray-200 cursor-pointer" />
               </label>
             </template>
-
             <template v-else>
               <div>
                 <div class="flex items-center justify-between mb-1.5">
@@ -573,7 +625,6 @@ onUnmounted(() => {
           >
             {{ saving ? 'Saving...' : 'Save Template' }}
           </button>
-
           <a
             :href="printUrl"
             target="_blank"
@@ -595,7 +646,6 @@ onUnmounted(() => {
                 <h3 class="text-sm font-semibold text-gray-900">Registered Students</h3>
                 <p class="text-[11px] text-gray-400">{{ counts.completed }}/{{ counts.total }} Done</p>
               </div>
-
               <div class="flex items-center gap-2 shrink-0">
                 <button
                   v-if="checkedDoneIds.length > 0 || (activeSample && dbDoneStudentIds.has(activeSample.id))"
@@ -608,7 +658,6 @@ onUnmounted(() => {
                   </svg>
                   Re-enable {{ checkedDoneIds.length > 1 ? `(${checkedDoneIds.length})` : '' }}
                 </button>
-
                 <button
                   type="button"
                   @click="confirmMarkDone"
@@ -623,7 +672,7 @@ onUnmounted(() => {
               </div>
             </div>
 
-            <!-- Backend Query Status Tabs -->
+            <!-- Status Tabs -->
             <div class="flex items-center bg-gray-100 p-1 rounded-xl mb-3 text-xs font-semibold">
               <button
                 type="button"
@@ -637,7 +686,6 @@ onUnmounted(() => {
               >
                 In Progress ({{ counts.pending }})
               </button>
-
               <button
                 type="button"
                 @click="statusFilter = 'completed'; onSectionOrStatusChange()"
@@ -650,7 +698,6 @@ onUnmounted(() => {
               >
                 Completed ({{ counts.completed }})
               </button>
-
               <button
                 type="button"
                 @click="statusFilter = 'all'; onSectionOrStatusChange()"
@@ -678,7 +725,6 @@ onUnmounted(() => {
                   class="w-full bg-gray-50 rounded-xl border border-gray-200 pl-8 pr-3 py-1.5 text-xs placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
                 />
               </div>
-
               <div class="grid grid-cols-2 gap-2">
                 <select
                   v-model="selectedGradeFilter"
@@ -689,7 +735,6 @@ onUnmounted(() => {
                     {{ g }}
                   </option>
                 </select>
-
                 <select
                   v-model="selectedSectionFilter"
                   @change="onSectionOrStatusChange"
@@ -795,6 +840,7 @@ onUnmounted(() => {
       </div>
     </div>
 
+    <!-- Mark Done Modal -->
     <div
       v-if="showMarkDoneModal"
       class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4"
@@ -809,11 +855,9 @@ onUnmounted(() => {
             </svg>
           </button>
         </div>
-
         <p class="text-xs text-gray-600 mb-6 leading-relaxed">
           Are you sure you want to mark the student(s) as done? They will be disabled and excluded from future ID print batches.
         </p>
-
         <div class="flex gap-3">
           <button
             type="button"

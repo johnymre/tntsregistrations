@@ -1,25 +1,25 @@
-<script setup>
+<script setup lang="ts">
 import { computed, ref } from 'vue'
 import AppLayout from '../../layouts/AppLayout.vue'
 
-const props = defineProps({
-  totalStudents: {
-    type: Number,
-    default: 0
-  }
+const props = withDefaults(defineProps<{
+  totalStudents?: number
+}>(), {
+  totalStudents: 0,
 })
 
 const stats = computed(() => [
-  { 
-    label: 'Registered Students', 
-    value: props.totalStudents.toLocaleString(), 
-    change: '35%', 
-    up: true, 
-    color: 'bg-red-100 text-red-500' 
+  {
+    label: 'Registered Students',
+    value: props.totalStudents.toLocaleString(),
+    change: '35%',
+    up: true,
+    color: 'bg-red-100 text-red-500',
+    prefix: '',
   },
-  { label: 'Invoices', value: '2,221', change: '12%', up: true, color: 'bg-green-100 text-green-500' },
-  { label: 'Clients', value: '1,423', change: '8%', up: true, color: 'bg-blue-100 text-blue-500' },
-  { label: 'Loyalty', value: '78%', change: '1%', up: false, color: 'bg-pink-100 text-pink-500' },
+  { label: 'Invoices', value: '2,221', change: '12%', up: true, color: 'bg-green-100 text-green-500', prefix: '' },
+  { label: 'Clients', value: '1,423', change: '8%', up: true, color: 'bg-blue-100 text-blue-500', prefix: '' },
+  { label: 'Loyalty', value: '78%', change: '1%', up: false, color: 'bg-pink-100 text-pink-500', prefix: '' },
 ])
 
 const chart = [
@@ -45,7 +45,7 @@ const invoices = [
   { no: 'UV-2319A', date: '14 Apr, 2020', client: 'Elizabeth Bailey', amount: '$450', status: 'Paid' },
 ]
 
-const statusStyles = {
+const statusStyles: Record<string, string> = {
   Paid: 'bg-green-100 text-green-600',
   Overdue: 'bg-red-100 text-red-500',
 }
@@ -79,7 +79,6 @@ const hovered = ref(chart.findIndex((c) => c.active))
       <div class="col-span-2 bg-white rounded-2xl border border-gray-100 p-6">
         <p class="text-sm text-gray-400 mb-1">Monthly Students</p>
         <p class="text-2xl font-bold text-gray-900 mb-6">216,000</p>
-
         <div class="flex items-end justify-between gap-3 h-40">
           <div
             v-for="(c, i) in chart"
@@ -98,7 +97,6 @@ const hovered = ref(chart.findIndex((c) => c.active))
           </div>
         </div>
       </div>
-
       <div class="bg-blue-600 rounded-2xl p-6 flex flex-col text-white relative overflow-hidden">
         <div class="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-blue-500/40"></div>
         <span class="text-[10px] font-bold bg-white/20 rounded-full px-2 py-0.5 w-fit mb-4">NEW</span>
@@ -127,7 +125,6 @@ const hovered = ref(chart.findIndex((c) => c.active))
           </div>
         </div>
       </div>
-
       <div class="col-span-2 bg-white rounded-2xl border border-gray-100 p-6">
         <h3 class="text-sm font-semibold text-gray-900 mb-4">Recent Invoices</h3>
         <table class="w-full text-sm">

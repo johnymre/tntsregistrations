@@ -1,18 +1,21 @@
-<script setup>
-import { ref, computed } from 'vue'
-import { usePage, router, Link } from '@inertiajs/vue3'
+<script setup lang="ts">
+import { Link, router, usePage } from '@inertiajs/vue3'
+import { computed, ref } from 'vue'
 
-defineProps({
-  active: { type: String, default: 'Dashboard' },
+withDefaults(defineProps<{
+  active?: string
+}>(), {
+  active: 'Dashboard',
 })
 
 const page = usePage()
-const user = computed(() => page.props.auth?.user)
+const user = computed(() => (page.props.auth as { user?: { name: string; email: string } })?.user)
+
 const initials = computed(() => {
-  if (!user.value?.name) return '?'
+  if (!user.value?.name) { return '?' }
   return user.value.name
     .split(' ')
-    .map((n) => n[0])
+    .map((n: string) => n[0])
     .slice(0, 2)
     .join('')
     .toUpperCase()
@@ -28,7 +31,7 @@ const navItems = [
 
 const showLogoutModal = ref(false)
 
-function confirmLogout() {
+function confirmLogout(): void {
   router.post('/logout')
 }
 </script>
@@ -44,7 +47,6 @@ function confirmLogout() {
         </svg>
         <span class="text-lg font-bold text-gray-900">Invo.</span>
       </div>
-
       <nav class="flex-1 px-4 space-y-1">
         <Link
           v-for="item in navItems"
@@ -62,9 +64,6 @@ function confirmLogout() {
             <svg v-else-if="item.label === 'Sectioning'" class="w-3.5 h-3.5" :class="active === item.label ? 'text-white' : 'text-gray-500'" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 01-1.125-1.125M3.375 19.5h7.5c.621 0 1.125-.504 1.125-1.125m-9.75 0V5.625m0 12.75v-1.5c0-.621.504-1.125 1.125-1.125m18.375 2.625V5.625m0 12.75c0 .621-.504 1.125-1.125 1.125m1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125m0 3.75h-7.5A1.125 1.125 0 0112 18.375m9.75-12.75c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125m19.5 0v1.5c0 .621-.504 1.125-1.125 1.125M2.25 5.625v1.5c0 .621.504 1.125 1.125 1.125m0 0h17.25m-17.25 0h7.5c.621 0 1.125.504 1.125 1.125M3.375 8.25c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125m17.25-3.75c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125m-17.25 0h17.25" /></svg>
             <svg v-else-if="item.label === 'School Year'" class="w-3.5 h-3.5" :class="active === item.label ? 'text-white' : 'text-gray-500'" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>
             <svg v-else-if="item.label === 'ID Maker App'" class="w-3.5 h-3.5" :class="active === item.label ? 'text-white' : 'text-gray-500'" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg>
-            <svg v-else-if="item.label === 'Attendance'" class="w-3.5 h-3.5" :class="active === item.label ? 'text-white' : 'text-gray-500'" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            <svg v-else-if="item.label === 'Payments/Billing'" class="w-3.5 h-3.5" :class="active === item.label ? 'text-white' : 'text-gray-500'" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m4.5 0h2.25m-6 2.25h2.25m3.75-11.25h-15A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25h15a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25z" /></svg>
-            <svg v-else-if="item.label === 'Announcements'" class="w-3.5 h-3.5" :class="active === item.label ? 'text-white' : 'text-gray-500'" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.34 15.84c-.688-.06-1.386-.09-2.09-.09H7.5a4.5 4.5 0 110-9h.75c.704 0 1.402-.03 2.09-.09m0 9.18c.253.962.584 1.892.985 2.783.247.55.06 1.21-.463 1.511l-.657.38c-.551.318-1.26.117-1.527-.461a20.845 20.845 0 01-1.44-4.282m3.102.069a18.03 18.03 0 01-.59-4.59c0-1.586.205-3.124.59-4.59m0 9.18a23.848 23.848 0 018.835 2.535M10.34 6.66a23.847 23.847 0 008.835-2.535m0 0A23.74 23.74 0 0018.795 3m.38 1.125a23.91 23.91 0 011.014 5.395m-1.014 8.855c-.118.38-.245.754-.38 1.125m.38-1.125a23.91 23.91 0 001.014-5.395m0-3.46c.495.413.811 1.035.811 1.73 0 .695-.316 1.317-.811 1.73m0-3.46a24.347 24.347 0 010 3.46" /></svg>
             <svg v-else class="w-3.5 h-3.5" :class="active === item.label ? 'text-white' : 'text-gray-500'" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 20.25a7.5 7.5 0 0115 0" /></svg>
           </span>
           {{ item.label }}
@@ -79,17 +78,14 @@ function confirmLogout() {
 
     <!-- Main -->
     <main class="flex-1 p-8 overflow-y-auto">
-      <!-- Top bar -->
       <div class="flex items-center justify-between mb-8">
         <div class="relative w-80">
           <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
           <input type="text" placeholder="Tap to search" class="w-full bg-white rounded-xl border border-gray-100 pl-11 pr-4 py-2.5 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30" />
         </div>
-
         <div class="flex items-center gap-5">
           <button class="relative w-9 h-9 rounded-full bg-white border border-gray-100 flex items-center justify-center">
             <svg class="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" /></svg>
-            <!-- <span class="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-blue-600 text-white text-[9px] font-bold flex items-center justify-center">3</span> -->
           </button>
 
           <div class="relative group">
@@ -100,9 +96,7 @@ function confirmLogout() {
                 <p class="text-xs text-gray-400 leading-tight">{{ user?.email ?? '' }}</p>
               </div>
             </button>
-
             <div class="absolute right-0 top-full h-2 w-full"></div>
-
             <div
               class="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl border border-gray-100 shadow-lg py-1.5 opacity-0 invisible translate-y-1 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-150 z-40"
             >
@@ -124,7 +118,6 @@ function confirmLogout() {
         </div>
       </div>
 
-      <!-- Page content -->
       <slot />
     </main>
 

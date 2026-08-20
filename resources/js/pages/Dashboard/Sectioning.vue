@@ -1,11 +1,30 @@
-<script setup>
-import { ref, computed } from 'vue'
+<script setup lang="ts">
 import { useForm } from '@inertiajs/vue3'
+import { computed, ref } from 'vue'
 import AppLayout from '../../layouts/AppLayout.vue'
 
-const props = defineProps({
-  sections: { type: Array, default: () => [] },
-  students: { type: Array, default: () => [] },
+interface Section {
+  id: number
+  name: string
+  grade_level: string
+  adviser_name?: string
+  enrolled_count: number
+  capacity: number
+}
+
+interface Student {
+  id: number
+  first_name: string
+  last_name: string
+  section?: string | null
+}
+
+const props = withDefaults(defineProps<{
+  sections?: Section[]
+  students?: Student[]
+}>(), {
+  sections: () => [],
+  students: () => [],
 })
 
 const gradeFilter = ref('All')
@@ -20,13 +39,13 @@ const form = useForm({
   adviser_name: '',
 })
 
-function openCreateModal() {
+function openCreateModal(): void {
   form.reset()
   form.clearErrors()
   showModal.value = true
 }
 
-function submitSection() {
+function submitSection(): void {
   form.post('/sectioning', {
     preserveScroll: true,
     onSuccess: () => {
@@ -38,44 +57,38 @@ function submitSection() {
 
 // Manage Students Modal state
 const showManageModal = ref(false)
-const activeSection = ref(null)
-const unassignedList = ref([])
-const assignedList = ref([])
+const activeSection = ref<Section | null>(null)
+const unassignedList = ref<Student[]>([])
+const assignedList = ref<Student[]>([])
 const searchUnassigned = ref('')
 const searchAssigned = ref('')
 
-const studentForm = useForm({
+const studentForm = useForm<{ student_ids: number[] }>({
   student_ids: [],
 })
 
-function openManageStudents(section) {
+function openManageStudents(section: Section): void {
   activeSection.value = section
   searchUnassigned.value = ''
   searchAssigned.value = ''
-  
-  // Table 1: Unassigned students (no section)
-  unassignedList.value = props.students.filter((s) => !s.section)
-  
-  // Table 2: Selected students in this section
-  assignedList.value = props.students.filter((s) => s.section === section.name)
-  
+  unassignedList.value = props.students.filter((s: Student) => !s.section)
+  assignedList.value = props.students.filter((s: Student) => s.section === section.name)
   showManageModal.value = true
 }
 
-function addStudent(student) {
-  unassignedList.value = unassignedList.value.filter((s) => s.id !== student.id)
+function addStudent(student: Student): void {
+  unassignedList.value = unassignedList.value.filter((s: Student) => s.id !== student.id)
   assignedList.value.push(student)
 }
 
-function removeStudent(student) {
-  assignedList.value = assignedList.value.filter((s) => s.id !== student.id)
+function removeStudent(student: Student): void {
+  assignedList.value = assignedList.value.filter((s: Student) => s.id !== student.id)
   unassignedList.value.push(student)
 }
 
-function saveStudentAssignments() {
-  if (!activeSection.value) return
-  
-  studentForm.student_ids = assignedList.value.map((s) => s.id)
+function saveStudentAssignments(): void {
+  if (!activeSection.value) { return }
+  studentForm.student_ids = assignedList.value.map((s: Student) => s.id)
   studentForm.post(`/sectioning/${activeSection.value.id}/students`, {
     preserveScroll: true,
     onSuccess: () => {
@@ -86,27 +99,27 @@ function saveStudentAssignments() {
 
 const filteredUnassigned = computed(() => {
   const query = searchUnassigned.value.toLowerCase().trim()
-  if (!query) return unassignedList.value
-  return unassignedList.value.filter((s) => 
+  if (!query) { return unassignedList.value }
+  return unassignedList.value.filter((s: Student) => 
     `${s.first_name} ${s.last_name}`.toLowerCase().includes(query)
   )
 })
 
 const filteredAssigned = computed(() => {
   const query = searchAssigned.value.toLowerCase().trim()
-  if (!query) return assignedList.value
-  return assignedList.value.filter((s) => 
+  if (!query) { return assignedList.value }
+  return assignedList.value.filter((s: Student) => 
     `${s.first_name} ${s.last_name}`.toLowerCase().includes(query)
   )
 })
 
 const filteredSections = computed(() => {
-  return props.sections.filter((s) => {
+  return props.sections.filter((s: Section) => {
     return gradeFilter.value === 'All' || s.grade_level === gradeFilter.value
   })
 })
 
-function isFull(s) {
+function isFull(s: Section): boolean {
   return s.enrolled_count >= s.capacity
 }
 </script>
@@ -149,7 +162,6 @@ function isFull(s) {
     <!-- Section Cards -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
       <div v-for="s in filteredSections" :key="s.id" class="bg-white rounded-2xl border border-gray-100 overflow-hidden flex flex-col">
-        <!-- Banner -->
         <div class="relative h-20 bg-gradient-to-br from-blue-50 to-blue-100 px-5 pt-4 overflow-hidden">
           <div class="absolute -right-4 -top-4 w-20 h-20 rounded-full bg-blue-200/40"></div>
           <span class="relative inline-block bg-gray-900 text-white text-[10px] font-bold tracking-wide rounded-md px-2 py-1 mb-1.5">
@@ -157,7 +169,6 @@ function isFull(s) {
           </span>
           <h3 class="relative text-lg font-bold text-gray-900">{{ s.name }}</h3>
         </div>
-        <!-- Body -->
         <div class="p-5 flex-1 flex flex-col">
           <div class="space-y-3 mb-4">
             <div class="flex items-center gap-2.5">
@@ -224,7 +235,6 @@ function isFull(s) {
             </svg>
           </button>
         </div>
-
         <form @submit.prevent="submitSection" class="space-y-4">
           <div>
             <label class="block text-xs font-medium text-gray-700 mb-1.5">Section Name</label>
@@ -236,7 +246,6 @@ function isFull(s) {
               class="w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
             />
           </div>
-
           <div>
             <label class="block text-xs font-medium text-gray-700 mb-1.5">Grade Level</label>
             <select
@@ -249,7 +258,6 @@ function isFull(s) {
               </option>
             </select>
           </div>
-
           <div>
             <label class="block text-xs font-medium text-gray-700 mb-1.5">Adviser Name</label>
             <input
@@ -260,7 +268,6 @@ function isFull(s) {
               class="w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
             />
           </div>
-
           <div class="flex gap-3 pt-3">
             <button
               type="button"
@@ -286,7 +293,7 @@ function isFull(s) {
       <div class="bg-white rounded-2xl shadow-xl w-full max-w-4xl p-6 flex flex-col max-h-[85vh]">
         <div class="flex items-center justify-between pb-4 border-b border-gray-100 mb-4">
           <div>
-            <h3 class="text-lg font-bold text-gray-900">Manage Students — {{ activeSection?.name }}</h3>
+            <h3 class="text-lg font-bold text-gray-900">Manage Students - {{ activeSection?.name }}</h3>
             <p class="text-xs text-gray-500 mt-0.5">{{ activeSection?.grade_level }} | Capacity: {{ assignedList.length }}/{{ activeSection?.capacity }}</p>
           </div>
           <button @click="showManageModal = false" class="text-gray-400 hover:text-gray-600 transition">
@@ -304,14 +311,12 @@ function isFull(s) {
               <h4 class="text-xs font-semibold uppercase tracking-wider text-gray-500">Unassigned Students</h4>
               <span class="text-xs font-bold text-gray-400">{{ unassignedList.length }}</span>
             </div>
-            
             <input
               v-model="searchUnassigned"
               type="text"
               placeholder="Search unassigned..."
               class="w-full bg-white rounded-xl border border-gray-200 px-3 py-1.5 text-xs mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
             />
-
             <div class="overflow-y-auto flex-1 max-h-[320px] bg-white rounded-xl border border-gray-100">
               <table class="w-full text-xs text-left">
                 <thead class="bg-gray-50 sticky top-0 border-b border-gray-100">
@@ -349,14 +354,12 @@ function isFull(s) {
               <h4 class="text-xs font-semibold uppercase tracking-wider text-blue-700">Students in {{ activeSection?.name }}</h4>
               <span class="text-xs font-bold text-blue-600">{{ assignedList.length }}</span>
             </div>
-
             <input
               v-model="searchAssigned"
               type="text"
               placeholder="Search section students..."
               class="w-full bg-white rounded-xl border border-gray-200 px-3 py-1.5 text-xs mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
             />
-
             <div class="overflow-y-auto flex-1 max-h-[320px] bg-white rounded-xl border border-gray-100">
               <table class="w-full text-xs text-left">
                 <thead class="bg-gray-50 sticky top-0 border-b border-gray-100">
@@ -389,7 +392,6 @@ function isFull(s) {
           </div>
         </div>
 
-        <!-- Bottom Right Actions -->
         <div class="flex items-center justify-end gap-3 pt-3 border-t border-gray-100">
           <button
             type="button"

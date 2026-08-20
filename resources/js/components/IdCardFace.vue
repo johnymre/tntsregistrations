@@ -1,10 +1,27 @@
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
+
+interface Field {
+  id: number | string
+  type: string
+  key: string
+  label: string
+  text?: string
+  xPct?: number
+  yPct?: number
+  widthPct?: number
+  fontSize?: number
+  bold?: boolean
+  color?: string
+  align?: 'left' | 'center' | 'right'
+  borderRadius?: number
+  centered?: boolean
+}
 
 const props = defineProps({
   image: String,
-  fields: { type: Array, default: () => [] },
-  values: { type: Object, default: () => ({}) },
+  fields: { type: Array as () => Field[], default: () => [] },
+  values: { type: Object as () => Record<string, string | null>, default: () => ({}) },
   width: { type: Number, default: 340 },
   interactive: { type: Boolean, default: false },
   selectedId: [Number, String],
@@ -14,10 +31,10 @@ const emit = defineEmits(['field-mousedown', 'resize-mousedown', 'delete'])
 
 const cardHeight = computed(() => props.width * 1.586)
 
-function getFieldValue(f) {
-  if (f.type === 'custom') return f.text
-  if (f.key === 'full_name') return props.values.full_name || 'STUDENT NAME'
-  if (f.key === 'photo') return props.values.photo_url || null
+function getFieldValue(f: Field): string | null {
+  if (f.type === 'custom') { return f.text ?? '' }
+  if (f.key === 'full_name') { return props.values.full_name || 'STUDENT NAME' }
+  if (f.key === 'photo') { return props.values.photo_url || null }
   return props.values[f.key] || f.label
 }
 </script>
@@ -63,7 +80,7 @@ function getFieldValue(f) {
         >
           <img
             v-if="getFieldValue(f)"
-            :src="getFieldValue(f)"
+            :src="getFieldValue(f)!"
             class="w-full h-full object-cover"
           />
           <span v-else class="text-[10px] text-gray-400 font-medium">PHOTO</span>
@@ -95,7 +112,6 @@ function getFieldValue(f) {
         >
           ✕
         </button>
-
         <div
           class="absolute -right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 bg-blue-600 rounded-full border-2 border-white shadow cursor-ew-resize z-10"
           @mousedown.stop="emit('resize-mousedown', $event, f)"

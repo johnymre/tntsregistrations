@@ -1,53 +1,86 @@
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 import IdCardFace from '../../components/IdCardFace.vue'
 
-const props = defineProps({
-  template: Object,
-  students: Array,
+interface Field {
+  id: number | string
+  type: string
+  key: string
+  label: string
+}
+
+interface Student {
+  id: number
+  first_name: string
+  last_name: string
+  grade_level?: string
+  section?: string
+  adviser?: string
+  school_year?: string
+  address?: string
+  birthday?: string
+  parent_name?: string
+  parent_address?: string
+  parent_contact_number?: string
+  photo_url?: string
+}
+
+interface Template {
+  front_image_url?: string
+  back_image_url?: string
+  front_layout?: Field[]
+  back_layout?: Field[]
+}
+
+const props = withDefaults(defineProps<{
+  template?: Template
+  students?: Student[]
+}>(), {
+  template: () => ({}),
+  students: () => [],
 })
 
 const RENDER_WIDTH = 340
 const TRUE_WIDTH_PX = 2.125 * 96
 const SCALE = TRUE_WIDTH_PX / RENDER_WIDTH
 
-function formatDate(d) {
-  if (!d) return null
+function formatDate(d?: string): string | null {
+  if (!d) { return null }
   const date = new Date(d)
-  if (Number.isNaN(date.getTime())) return null
+  if (Number.isNaN(date.getTime())) { return null }
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-function valuesFor(student) {
+function valuesFor(student: Student): Record<string, string | null> {
   return {
     full_name: `${student.first_name} ${student.last_name}`,
-    grade_level: student.grade_level,
-    section: student.section,
-    adviser: student.adviser,
-    school_year: student.school_year,
-    address: student.address,
+    grade_level: student.grade_level ?? null,
+    section: student.section ?? null,
+    adviser: student.adviser ?? null,
+    school_year: student.school_year ?? null,
+    address: student.address ?? null,
     birthday: formatDate(student.birthday),
-    parent_name: student.parent_name,
-    parent_address: student.parent_address,
-    parent_contact_number: student.parent_contact_number,
-    photo_url: student.photo_url,
+    parent_name: student.parent_name ?? null,
+    parent_address: student.parent_address ?? null,
+    parent_contact_number: student.parent_contact_number ?? null,
+    photo_url: student.photo_url ?? null,
   }
 }
 
-function printPage() {
+function printPage(): void {
   window.print()
 }
 
 const chunks = computed(() => {
   const size = 4
-  const result = []
+  const result: Student[][] = []
   for (let i = 0; i < props.students.length; i += size) {
     result.push(props.students.slice(i, i + size))
   }
   return result
 })
 
-function rangeLabel(index) {
+function rangeLabel(index: number): string {
   const start = index * 4 + 1
   const end = Math.min((index + 1) * 4, props.students.length)
   return `${start}-${end}`
@@ -60,9 +93,8 @@ function rangeLabel(index) {
       <button @click="printPage">Print All IDs</button>
       <p>Set your printer to Long / 8.5" x 13" paper, <strong>landscape orientation</strong>. 4 students per sheet (front row on top, matching back row directly below). Cut each column and pair front with the back beneath it.</p>
     </div>
-
     <template v-for="(chunk, i) in chunks" :key="i">
-      <p class="sheet-label">Students {{ rangeLabel(i) }} — front (top row) / back (bottom row)</p>
+      <p class="sheet-label">Students {{ rangeLabel(i) }} - front (top row) / back (bottom row)</p>
       <div class="sheet">
         <div class="grid">
           <!-- Row 1: fronts -->
@@ -76,7 +108,6 @@ function rangeLabel(index) {
               :style="{ transform: `scale(${SCALE})`, transformOrigin: 'top left' }"
             />
           </div>
-
           <!-- Row 2: backs -->
           <div v-for="student in chunk" :key="'back-' + student.id" class="card-slot">
             <IdCardFace
@@ -104,7 +135,6 @@ function rangeLabel(index) {
 .sheet { width: 13in; height: 8.5in; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #fff; margin: 20px auto; box-shadow: 0 1px 6px rgba(0,0,0,0.15); }
 .grid { display: grid; grid-template-columns: repeat(4, 2.125in); grid-template-rows: repeat(2, 3.375in); gap: 0.5in; }
 .card-slot { width: 2.125in; height: 3.375in; overflow: hidden; position: relative; box-shadow: 0 1px 4px rgba(0,0,0,0.15); }
-
 @media print {
   .print-root { background: #fff; }
   .toolbar { display: none; }

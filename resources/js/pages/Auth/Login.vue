@@ -1,6 +1,6 @@
-<script setup>
-import { ref } from 'vue'
+<script setup lang="ts">
 import { useForm } from '@inertiajs/vue3'
+import { ref } from 'vue'
 
 const form = useForm({
   email: '',
@@ -10,7 +10,7 @@ const form = useForm({
 
 const showPassword = ref(false)
 
-function submit() {
+function submit(): void {
   form.post('/login', {
     onFinish: () => form.reset('password'),
   })
@@ -30,42 +30,8 @@ function submit() {
           </svg>
           <span class="text-xl font-bold text-gray-900">NovaSyncer</span>
         </div>
-
         <h1 class="text-3xl font-bold text-gray-900 mb-2">Log in to your Account</h1>
         <p class="text-sm text-gray-500 mb-6">Welcome back! Select method to log in:</p>
-
-        <!-- Social buttons
-        <div class="grid grid-cols-2 gap-3 mb-6">
-          <button
-            type="button"
-            class="flex items-center justify-center gap-2 border border-gray-200 rounded-xl py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
-          >
-            <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
-              <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.91c1.7-1.57 2.69-3.88 2.69-6.62z"/>
-              <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.91-2.26c-.81.54-1.84.86-3.05.86-2.34 0-4.33-1.58-5.04-3.71H.96v2.33A9 9 0 0 0 9 18z"/>
-              <path fill="#FBBC05" d="M3.96 10.71a5.4 5.4 0 0 1 0-3.42V4.96H.96a9 9 0 0 0 0 8.08l3-2.33z"/>
-              <path fill="#EA4335" d="M9 3.58c1.32 0 2.51.46 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.96l3 2.33C4.67 5.16 6.66 3.58 9 3.58z"/>
-            </svg>
-            Google
-          </button>
-          <button
-            type="button"
-            class="flex items-center justify-center gap-2 border border-gray-200 rounded-xl py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
-          >
-            <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
-              <path fill="#1877F2" d="M18 9a9 9 0 1 0-10.4 8.89v-6.29H5.31V9h2.29V7.02c0-2.26 1.35-3.51 3.41-3.51.99 0 2.02.18 2.02.18v2.22h-1.14c-1.12 0-1.47.7-1.47 1.41V9h2.5l-.4 2.6h-2.1v6.29A9 9 0 0 0 18 9z"/>
-              <path fill="#fff" d="M12.5 11.6 12.9 9h-2.5V7.32c0-.71.35-1.41 1.47-1.41h1.14V3.69s-1.03-.18-2.02-.18c-2.06 0-3.41 1.25-3.41 3.51V9H5.31v2.6h2.29v6.29a9.06 9.06 0 0 0 2.8 0V11.6h2.1z"/>
-            </svg>
-            Facebook
-          </button>
-        </div> -->
-
-        <!-- Divider
-        <div class="flex items-center gap-3 mb-6">
-          <div class="flex-1 h-px bg-gray-200"></div>
-          <span class="text-xs text-gray-400 whitespace-nowrap">or continue with email</span>
-          <div class="flex-1 h-px bg-gray-200"></div>
-        </div> -->
 
         <form @submit.prevent="submit" class="space-y-3">
           <!-- Email -->
@@ -127,10 +93,9 @@ function submit() {
             :disabled="form.processing"
             class="w-full mt-2 py-3 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition"
           >
-            {{ form.processing ? 'Logging in…' : 'Log in' }}
+            {{ form.processing ? 'Logging in...' : 'Log in' }}
           </button>
         </form>
-
         <p class="text-center text-sm text-gray-500 mt-6">
           Don't have an account?
           <a href="/register" class="text-blue-600 font-medium hover:text-blue-700">Create an account</a>
@@ -139,18 +104,13 @@ function submit() {
 
       <!-- Right: illustration panel -->
       <div class="hidden md:flex relative bg-blue-600 items-center justify-center overflow-hidden px-10 py-12">
-        <!-- decorative circles -->
         <div class="absolute w-[420px] h-[420px] rounded-full bg-blue-500/40"></div>
         <div class="absolute w-[300px] h-[300px] rounded-full bg-blue-400/30"></div>
-
         <div class="relative w-full max-w-sm">
-          <!-- connector line -->
           <svg class="absolute -left-2 top-1/2 -translate-y-1/2 w-24 h-40 text-blue-300/50" viewBox="0 0 100 160" fill="none">
             <path d="M10 20 H50 V140 H10" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
             <path d="M50 80 H90" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
           </svg>
-
-          <!-- app icon bubbles -->
           <div class="absolute -left-2 top-2 w-11 h-11 rounded-full bg-white shadow-lg flex items-center justify-center">
             <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#36C5F0" d="M9.5 15.5a2.5 2.5 0 11-2.5-2.5h2.5v2.5z"/><path fill="#2EB67D" d="M10.5 15.5a2.5 2.5 0 015 0v6.5a2.5 2.5 0 01-5 0v-6.5z"/><path fill="#ECB22E" d="M14.5 8.5a2.5 2.5 0 112.5 2.5h-2.5V8.5z"/><path fill="#E01E5A" d="M13.5 8.5a2.5 2.5 0 01-5 0V2a2.5 2.5 0 015 0v6.5z"/></svg>
           </div>
@@ -167,8 +127,6 @@ function submit() {
               <path fill="#EA4335" d="M9 3.58c1.32 0 2.51.46 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.96l3 2.33C4.67 5.16 6.66 3.58 9 3.58z"/>
             </svg>
           </div>
-
-          <!-- floating card -->
           <div class="relative ml-16 bg-white rounded-2xl shadow-2xl p-3 w-64">
             <div class="flex gap-1.5 mb-3">
               <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
@@ -183,7 +141,6 @@ function submit() {
             </div>
           </div>
         </div>
-
         <div class="absolute bottom-12 inset-x-10 text-center">
           <h2 class="text-white text-xl font-bold mb-1">Connect with every application.</h2>
           <p class="text-blue-100 text-sm mb-5">Everything you need in an easily customizable dashboard.</p>
