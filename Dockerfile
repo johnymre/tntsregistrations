@@ -7,11 +7,14 @@ COPY . .
 RUN npm run build
 
 # Stage 2: PHP/Laravel Application
-FROM php:8.2-fpm-alpine
+FROM php:8.4-fpm
 
-# Install Nginx and PostgreSQL driver
-RUN apk add --no-cache nginx postgresql-dev \
-    && docker-php-ext-install pdo pdo_pgsql
+# Install Nginx and PostgreSQL driver using apt-get
+RUN apt-get update && apt-get install -y \
+    nginx \
+    libpq-dev \
+    && docker-php-ext-install pdo pdo_pgsql \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /var/www
 
@@ -24,9 +27,9 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
     && composer install --no-dev --optimize-autoloader
 
 # Copy Nginx configuration
-COPY nginx.conf /etc/nginx/http.d/default.conf
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 
 # Cache Laravel configuration, run migrations, start PHP-FPM & Nginx
-CMD php artisan config:cache && php artisan route:cache && php artisan migrate --force && php-fpm -D && nginx -g "daemon off;"
+CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]

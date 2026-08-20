@@ -1,40 +1,16 @@
-import inertia from '@inertiajs/vite';
-import { wayfinder } from '@laravel/vite-plugin-wayfinder';
-import tailwindcss from '@tailwindcss/vite';
-import vue from '@vitejs/plugin-vue';
-import laravel from 'laravel-vite-plugin';
-import { bunny } from 'laravel-vite-plugin/fonts';
-import { defineConfig } from 'vite';
+import { wayfinder } from '@laravel/vite-plugin-wayfinder'
+import vue from '@vitejs/plugin-vue'
+import laravel from 'laravel-vite-plugin'
+import { defineConfig } from 'vite'
 
-export default defineConfig({
-
-    server: {
-    host: '127.0.0.1',
-    port: 5173,
-  },
-  
-    plugins: [
-        laravel({
-            input: ['resources/css/app.css', 'resources/js/app.ts'],
-            refresh: true,
-            fonts: [
-                bunny('Instrument Sans', {
-                    weights: [400, 500, 600],
-                }),
-            ],
-        }),
-        inertia(),
-        tailwindcss(),
-        vue({
-            template: {
-                transformAssetUrls: {
-                    base: null,
-                    includeAbsolute: false,
-                },
-            },
-        }),
-        wayfinder({
-            formVariants: true,
-        }),
-    ],
-});
+export default defineConfig(({ command }) => ({
+  plugins: [
+    laravel({
+      input: ['resources/css/app.css', 'resources/js/app.ts'],
+      refresh: true,
+    }),
+    vue(),
+    // Only run wayfinder during development (vite serve)
+    command === 'serve' ? wayfinder() : null,
+  ].filter(Boolean),
+}))
