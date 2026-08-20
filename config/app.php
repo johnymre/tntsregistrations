@@ -52,33 +52,38 @@ return [
     |
     */
 
-    'url' => (is_string(env('APP_URL')) && str_contains(env('APP_URL'), '://'))
-    ? env('APP_URL')
-    : 'https://tntsregistrations.onrender.com',
+    'url' => (function () {
+        $url = env('APP_URL');
+        if (is_string($url) && str_starts_with($url, 'http')) {
+            return rtrim($url, '/');
+        }
+
+        return 'https://tntsregistrations.onrender.com';
+    })(),
 
     /*
-    |--------------------------------------------------------------------------
-    | Application Timezone
-    |--------------------------------------------------------------------------
-    |
-    | Here you may specify the default timezone for your application, which
-    | will be used by the PHP date and date-time functions. The timezone
-    | is set to "UTC" by default as it is suitable for most use cases.
-    |
-    */
+        |--------------------------------------------------------------------------
+        | Application Timezone
+        |--------------------------------------------------------------------------
+        |
+        | Here you may specify the default timezone for your application, which
+        | will be used by the PHP date and date-time functions. The timezone
+        | is set to "UTC" by default as it is suitable for most use cases.
+        |
+        */
 
     'timezone' => 'UTC',
 
     /*
-    |--------------------------------------------------------------------------
-    | Application Locale Configuration
-    |--------------------------------------------------------------------------
-    |
-    | The application locale determines the default locale that will be used
-    | by Laravel's translation / localization methods. This option can be
-    | set to any locale for which you plan to have translation strings.
-    |
-    */
+        |--------------------------------------------------------------------------
+        | Application Locale Configuration
+        |--------------------------------------------------------------------------
+        |
+        | The application locale determines the default locale that will be used
+        | by Laravel's translation / localization methods. This option can be
+        | set to any locale for which you plan to have translation strings.
+        |
+        */
 
     'locale' => env('APP_LOCALE', 'en'),
 
@@ -87,25 +92,25 @@ return [
     'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
 
     /*
-    |--------------------------------------------------------------------------
-    | Encryption Key
-    |--------------------------------------------------------------------------
-    |
-    | This key is utilized by Laravel's encryption services and should be set
-    | to a random, 32 character string to ensure that all encrypted values
-    | are secure. You should do this prior to deploying the application.
-    |
-    */
+        |--------------------------------------------------------------------------
+        | Encryption Key
+        |--------------------------------------------------------------------------
+        |
+        | This key is utilized by Laravel's encryption services and should be set
+        | to a random, 32 character string to ensure that all encrypted values
+        | are secure. You should do this prior to deploying the application.
+        |
+        */
 
     'cipher' => 'AES-256-CBC',
 
     'key' => env('APP_KEY'),
 
     'previous_keys' => [
-        ...array_filter(
-            explode(',', (string) env('APP_PREVIOUS_KEYS', '')),
-        ),
-    ],
+            ...array_filter(
+                explode(',', (string) env('APP_PREVIOUS_KEYS', '')),
+            ),
+        ],
 
     /*
     |--------------------------------------------------------------------------
@@ -121,8 +126,8 @@ return [
     */
 
     'maintenance' => [
-        'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
-        'store' => env('APP_MAINTENANCE_STORE', 'database'),
+            'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
+            'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
 ];
