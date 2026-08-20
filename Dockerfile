@@ -7,22 +7,28 @@ COPY . .
 RUN npm run build
 
 # Stage 2: PHP/Laravel Application
-FROM php:8.4-fpm
+FROM php:8.4-fpm-alpine
 
-# Install Nginx and PostgreSQL driver using apt-get
-RUN apt-get update && apt-get install -y \
+# 1. Install system dependencies & build tools
+RUN apk add --no-cache \
     nginx \
-    libpq-dev \
-    && docker-php-ext-install pdo pdo_pgsql \
-    && rm -rf /var/lib/apt/lists/*
+    postgresql-dev \
+    libzip-dev \
+    libpng-dev \
+    libjpeg-turbo-dev \
+    freetype-dev \
+    git \
+    unzip \
+    curl
 
-WORKDIR /var/www
+# 2. Install required PHP extensions
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install pdo pdo_pgsql zip gd bcmath
 
-# Copy application files
+WORKDIR /var/www/html
+
+# 3. Copy files and install Composer dependencies
 COPY . .
-COPY --from=frontend /app/public/build ./public/build
-
-# Install PHP dependencies
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \
     && composer install --no-dev --optimize-autoloader
 
