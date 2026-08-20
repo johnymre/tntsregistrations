@@ -1,0 +1,45 @@
+services:
+    app:
+        image: php:8.4-cli
+        working_dir: /var/www/html
+        volumes:
+            - '.:/var/www/html'
+        ports:
+            - '8000:8000'
+        command: >
+            sh -c "apt-get update && apt-get install -y libpq-dev libjpeg-dev libpng-dev libwebp-dev libfreetype6-dev
+            && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp
+            && docker-php-ext-install gd pdo pdo_pgsql
+            && echo 'upload_max_filesize=20M' > /usr/local/etc/php/conf.d/uploads.ini
+            && echo 'post_max_size=25M' >> /usr/local/etc/php/conf.d/uploads.ini
+            && echo 'memory_limit=256M' >> /usr/local/etc/php/conf.d/uploads.ini
+            && php artisan serve --host=0.0.0.0 --port=8000"
+        depends_on:
+            - pgsql
+        networks:
+            - app-network
+
+    pgsql:
+        image: 'postgres:16'
+        ports:
+            - '5432:5432'
+        environment:
+            POSTGRES_DB: laravel
+            POSTGRES_USER: laravel
+            POSTGRES_PASSWORD: password
+        volumes:
+            - 'pgdata:/var/lib/postgresql/data'
+        networks:
+            - app-network
+        healthcheck:
+            test: ["CMD", "pg_isready", "-U", "laravel"]
+            retries: 3
+            timeout: 5s
+
+networks:
+    app-network:
+        driver: bridge
+
+volumes:
+    pgdata:
+        driver: local
