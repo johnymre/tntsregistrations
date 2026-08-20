@@ -944,9 +944,7 @@ onUnmounted(() => {
                                     Registered Students
                                 </h3>
                                 <p class="text-[11px] text-gray-400">
-                                    {{ counts.completed }}/{{
-                                        counts.total
-                                    }}
+                                    {{ counts.completed }}/{{ counts.total }}
                                     Done
                                 </p>
                             </div>
