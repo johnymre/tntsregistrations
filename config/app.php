@@ -52,7 +52,8 @@ return [
     |
     */
 
-    'url' => env('APP_URL', 'https://tntsregistrations.onrender.com'),
+    'url' => env('APP_URL') ? trim(env('APP_URL')) : 'https://tntsregistrations.onrender.com',
+
 
     /*
     |--------------------------------------------------------------------------
