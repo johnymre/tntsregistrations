@@ -30,7 +30,7 @@ class RegistrationFactory extends Factory
             'birthday' => fake()->dateTimeBetween('-18 years', '-12 years')->format('Y-m-d'),
             'parent_name' => fake()->name(),
             'parent_address' => fake()->address(),
-            'parent_contact_number' => '09' . fake()->numerify('#########'),
+            'parent_contact_number' => '09'.fake()->numerify('#########'),
             'photo_path' => null,
         ];
     }

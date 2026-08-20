@@ -3,13 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\Registration;
-use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(): Response
     {
-        return inertia('Dashboard/Dashboard', [
+        return Inertia::render('Dashboard/Dashboard', [
             'totalStudents' => Registration::count(),
         ]);
     }
