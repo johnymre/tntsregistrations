@@ -24,7 +24,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        if ($this->app->environment('production') || config('app.env') === 'production') {
+        // Only force HTTPS for web HTTP requests, not CLI/artisan execution
+        if (!$this->app->runningInConsole() && ($this->app->environment('production') || config('app.env') === 'production')) {
             URL::forceScheme('https');
         }
     }
