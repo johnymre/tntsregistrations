@@ -11,7 +11,7 @@ RUN npm run build
 # Stage 2: PHP Application Container
 FROM php:8.3-fpm
 
-# Install system dependencies & PHP extensions
+# Install system dependencies & PHP extensions required by Composer/Laravel
 RUN apt-get update && apt-get install -y \
     git \
     curl \
@@ -19,26 +19,31 @@ RUN apt-get update && apt-get install -y \
     libonig-dev \
     libxml2-dev \
     libpq-dev \
+    libzip-dev \
     zip \
     unzip \
     nginx \
-    && docker-php-ext-install pdo pdo_pgsql pgsql
+    && docker-php-ext-install pdo pdo_pgsql pgsql zip mbstring bcmath
+
+# Set Composer environment limits
+ENV COMPOSER_ALLOW_SUPERUSER=1
+ENV COMPOSER_MEMORY_LIMIT=-1
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-# Copy application source code
+# Copy application files
 COPY . .
 
 # Copy built Vite assets from Stage 1 into public/build
 COPY --from=frontend-builder /app/public/build /var/www/html/public/build
 
-# Install PHP dependencies without triggering Artisan post-install scripts
-RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
+# Install PHP dependencies with platform check ignored
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts --ignore-platform-reqs
 
-# Set directory permissions for Laravel
+# Set permissions
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
 EXPOSE 10000
