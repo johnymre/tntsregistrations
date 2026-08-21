@@ -29,25 +29,55 @@ class RegistrationController extends Controller
                 'string',
                 'max:255',
             ],
-
+            'middle_name' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
             'last_name' => [
                 'required',
                 'string',
                 'max:255',
             ],
-
+            'address' => [
+                'required',
+                'string',
+                'max:255',
+            ],
+            'birthday' => [
+                'required',
+                'date',
+            ],
+            'parent_name' => [
+                'required',
+                'string',
+                'max:255',
+            ],
+            'parent_address' => [
+                'required',
+                'string',
+                'max:255',
+            ],
+            'parent_contact_number' => [
+                'required',
+                'string',
+                'max:50',
+            ],
+            'photo_path' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
             'school_year' => [
-                'required',
+                'nullable',
                 'string',
                 'max:255',
             ],
-
             'section' => [
-                'required',
+                'nullable',
                 'string',
                 'max:255',
             ],
-
             'adviser' => [
                 'nullable',
                 'string',
@@ -84,7 +114,6 @@ class RegistrationController extends Controller
 
         return Inertia::render('Dashboard/Students', [
             'registrations' => $registrations,
-
             'filters' => [
                 'search' => is_string($search) ? $search : '',
             ],
