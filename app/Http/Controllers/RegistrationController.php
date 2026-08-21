@@ -5,52 +5,27 @@ namespace App\Http\Controllers;
 use App\Models\Registration;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class RegistrationController extends Controller
 {
+    public function create(): Response
+    {
+        return Inertia::render('TntsRegistration');
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'first_name' => [
-                'required',
-                'string',
-                'max:255',
-            ],
-            'middle_name' => [
-                'nullable',
-                'string',
-                'max:255',
-            ],
-            'last_name' => [
-                'required',
-                'string',
-                'max:255',
-            ],
-            'address' => [
-                'required',
-                'string',
-                'max:1000',
-            ],
-            'birthday' => [
-                'required',
-                'date',
-                'before_or_equal:today',
-            ],
-            'parent_name' => [
-                'required',
-                'string',
-                'max:255',
-            ],
-            'parent_address' => [
-                'required',
-                'string',
-                'max:1000',
-            ],
-            'parent_contact_number' => [
-                'required',
-                'string',
-                'max:20',
-            ],
+            'first_name' => ['required', 'string', 'max:255'],
+            'middle_name' => ['nullable', 'string', 'max:255'],
+            'last_name' => ['required', 'string', 'max:255'],
+            'address' => ['required', 'string', 'max:255'],
+            'birthday' => ['required', 'date', 'before_or_equal:today'],
+            'parent_name' => ['required', 'string', 'max:255'],
+            'parent_address' => ['required', 'string', 'max:255'],
+            'parent_contact_number' => ['required', 'string', 'max:20'],
             'photo' => [
                 'nullable',
                 'image',
