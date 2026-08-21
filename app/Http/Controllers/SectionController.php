@@ -12,9 +12,6 @@ use Inertia\Response;
 
 class SectionController extends Controller
 {
-    /**
-     * Display the sectioning page.
-     */
     public function index(): Response
     {
         $sections = Section::query()
@@ -33,9 +30,6 @@ class SectionController extends Controller
         ]);
     }
 
-    /**
-     * Create a new section.
-     */
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
@@ -92,11 +86,10 @@ class SectionController extends Controller
         ]);
     }
 
-    /**
-     * Assign students to a section.
-     */
-    public function updateStudents(Request $request, int $section): RedirectResponse
-    {
+    public function updateStudents(
+        Request $request,
+        int $section
+    ): RedirectResponse {
         $validated = $request->validate([
             'student_ids' => [
                 'required',
