@@ -2,11 +2,9 @@
 FROM node:20-alpine AS frontend-builder
 WORKDIR /app
 
-# Copy package configs and install JS dependencies
 COPY package*.json ./
 RUN npm ci
 
-# Copy source code and build Vite assets
 COPY . .
 RUN npm run build
 
@@ -37,12 +35,11 @@ COPY . .
 # Copy built Vite assets from Stage 1 into public/build
 COPY --from=frontend-builder /app/public/build /var/www/html/public/build
 
-# Install PHP dependencies
-RUN composer install --no-dev --optimize-autoloader --no-interaction
+# Install PHP dependencies without triggering Artisan post-install scripts
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
 
 # Set directory permissions for Laravel
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Expose port and start script
 EXPOSE 10000
 CMD ["sh", "docker-entrypoint.sh"]
