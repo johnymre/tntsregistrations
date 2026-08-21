@@ -1,49 +1,48 @@
-# Stage 1: Build Vue/JS frontend assets
-FROM node:20-alpine AS frontend
+# Stage 1: Build Node.js / Vite Assets
+FROM node:20-alpine AS frontend-builder
 WORKDIR /app
-RUN apt-get update && apt-get install -y nodejs npm
+
+# Copy package configs and install JS dependencies
 COPY package*.json ./
-RUN npm install
 RUN npm ci
+
+# Copy source code and build Vite assets
 COPY . .
 RUN npm run build
 
-# Stage 2: PHP/Laravel Application
-FROM php:8.4-fpm-alpine
+# Stage 2: PHP Application Container
+FROM php:8.3-fpm
 
-# 1. Install system dependencies & build tools
-# Use --no-cache to always pull fresh package list indexes
-RUN apk update && apk add --no-cache \
-    nginx \
-    postgresql-dev \
-    libzip-dev \
-    libpng-dev \
-    libjpeg-turbo-dev \
-    freetype-dev \
+# Install system dependencies & PHP extensions
+RUN apt-get update && apt-get install -y \
     git \
+    curl \
+    libpng-dev \
+    libonig-dev \
+    libxml2-dev \
+    libpq-dev \
+    zip \
     unzip \
-    curl
+    nginx \
+    && docker-php-ext-install pdo pdo_pgsql pgsql
 
-
-# 2. Install required PHP extensions
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo pdo_pgsql zip gd bcmath
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-# 3. Copy files and install Composer dependencies
+# Copy application source code
 COPY . .
-ENV COMPOSER_HTTP_TIMEOUT=600
 
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \
-    && composer install --no-dev --optimize-autoloader --no-interaction
+# Copy built Vite assets from Stage 1 into public/build
+COPY --from=frontend-builder /app/public/build /var/www/html/public/build
 
-# Copy Nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Install PHP dependencies
+RUN composer install --no-dev --optimize-autoloader --no-interaction
 
-EXPOSE 80
+# Set directory permissions for Laravel
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Cache Laravel configuration, run migrations, start PHP-FPM & Nginx
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
-
-
+# Expose port and start script
+EXPOSE 10000
+CMD ["sh", "docker-entrypoint.sh"]

@@ -1,12 +1,12 @@
 #!/bin/sh
 set -e
 
-# Force environment clear
+# Clear config and route caches
 php artisan config:clear
 php artisan route:clear
 
-# Execute database migrations
+# Run database migrations
 php artisan migrate --force
 
-# Launch application
+# Start application server
 exec php artisan serve --host=0.0.0.0 --port=10000
