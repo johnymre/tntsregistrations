@@ -8,10 +8,10 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-# Stage 2: PHP Application Container (Explicit PHP 8.3 CLI + FPM)
+# Stage 2: PHP Application Container
 FROM php:8.3-cli
 
-# Install system dependencies & PHP extensions
+# Install system libraries and build required PHP extensions
 RUN apt-get update && apt-get install -y \
     git \
     curl \
@@ -22,24 +22,23 @@ RUN apt-get update && apt-get install -y \
     libzip-dev \
     zip \
     unzip \
-    && docker-php-ext-install pdo pdo_pgsql pgsql zip mbstring bcmath
-
-# Set Composer environment limits
-ENV COMPOSER_ALLOW_SUPERUSER=1
-ENV COMPOSER_MEMORY_LIMIT=-1
+    && docker-php-ext-install pdo pdo_pgsql pgsql zip mbstring bcmath \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+ENV COMPOSER_ALLOW_SUPERUSER=1
 
 WORKDIR /var/www/html
 
 # Copy application files
 COPY . .
 
-# Copy built Vite assets from Stage 1 into public/build
+# Copy compiled Vite assets from Stage 1
 COPY --from=frontend-builder /app/public/build /var/www/html/public/build
 
-# Install PHP dependencies with platform check ignored
+# Install PHP dependencies safely
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
 
 # Set permissions
