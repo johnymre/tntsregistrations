@@ -1,5 +1,8 @@
-# Stage 1: Build Node.js / Vite Assets
+# ============================================
+# Stage 1: Build Node.js / Vite assets
+# ============================================
 FROM node:20-alpine AS frontend-builder
+
 WORKDIR /app
 
 COPY package*.json ./
@@ -8,10 +11,12 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-# Stage 2: PHP Application Container
+
+# ============================================
+# Stage 2: PHP / Laravel application
+# ============================================
 FROM php:8.3-cli
 
-# Install system libraries and required PHP extensions
 RUN apt-get update && apt-get install -y \
     git \
     curl \
@@ -20,40 +25,89 @@ RUN apt-get update && apt-get install -y \
     libxml2-dev \
     libpq-dev \
     libzip-dev \
+    libicu-dev \
     zip \
     unzip \
-    && docker-php-ext-install pdo pdo_pgsql pgsql zip mbstring bcmath \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    && docker-php-ext-install \
+        pdo \
+        pdo_pgsql \
+        pgsql \
+        zip \
+        mbstring \
+        bcmath \
+        intl \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install Composer
+# Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
 WORKDIR /var/www/html
 
-# 1. Copy ONLY composer files first to isolate dependency installation
+
+# ============================================
+# Install PHP dependencies
+# ============================================
 COPY composer.json composer.lock ./
 
-# 2. Run composer install WITHOUT --no-plugins (which crashes Pest/Laravel plugins)
+# Helpful diagnostics for Render logs
+RUN php -v && php -m && composer --version
+
 RUN composer install \
     --no-dev \
     --no-scripts \
     --no-autoloader \
     --prefer-dist \
-    --no-interaction
+    --no-interaction \
+    -vvv
 
-# 3. Copy full application source files
+
+# ============================================
+# Application files
+# ============================================
 COPY . .
 
-# 4. Copy compiled Vite assets from Stage 1
-COPY --from=frontend-builder /app/public/build /var/www/html/public/build
 
-# 5. Generate production autoloader after all PHP classes exist
-RUN composer dump-autoload --optimize --no-dev
+# ============================================
+# Copy Vite production build
+# ============================================
+COPY --from=frontend-builder \
+    /app/public/build \
+    /var/www/html/public/build
 
-# Set permissions
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+
+# ============================================
+# Optimize Composer autoloader
+# ============================================
+RUN composer dump-autoload \
+    --optimize \
+    --no-dev \
+    --no-interaction
+
+
+# ============================================
+# Laravel permissions
+# ============================================
+RUN mkdir -p storage/framework/cache \
+    storage/framework/sessions \
+    storage/framework/views \
+    storage/logs \
+    bootstrap/cache \
+    && chown -R www-data:www-data \
+        storage \
+        bootstrap/cache \
+    && chmod -R 775 \
+        storage \
+        bootstrap/cache
+
+
+# ============================================
+# Entrypoint
+# ============================================
+RUN chmod +x /var/www/html/docker-entrypoint.sh
 
 EXPOSE 10000
-CMD ["sh", "docker-entrypoint.sh"]
+
+CMD ["sh", "/var/www/html/docker-entrypoint.sh"]
