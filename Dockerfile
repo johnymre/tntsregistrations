@@ -32,14 +32,25 @@ ENV COMPOSER_ALLOW_SUPERUSER=1
 
 WORKDIR /var/www/html
 
-# Copy application files
+# 1. Copy ONLY composer files first to isolate dependency installation
+COPY composer.json composer.lock ./
+
+# 2. Run composer install WITHOUT --no-plugins (which crashes Pest/Laravel plugins)
+RUN composer install \
+    --no-dev \
+    --no-scripts \
+    --no-autoloader \
+    --prefer-dist \
+    --no-interaction
+
+# 3. Copy full application source files
 COPY . .
 
-# Copy compiled Vite assets from Stage 1
+# 4. Copy compiled Vite assets from Stage 1
 COPY --from=frontend-builder /app/public/build /var/www/html/public/build
 
-# Install PHP production dependencies safely without plugins/scripts blocking build
-RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts --no-plugins
+# 5. Generate production autoloader after all PHP classes exist
+RUN composer dump-autoload --optimize --no-dev
 
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
