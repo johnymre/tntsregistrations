@@ -106,7 +106,10 @@
     "sort-packages": true,
     "platform": {
         "php": "8.3.0"
-    }
+    },
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
 },
     "minimum-stability": "stable"
 }
