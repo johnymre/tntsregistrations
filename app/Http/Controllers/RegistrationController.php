@@ -5,11 +5,48 @@ namespace App\Http\Controllers;
 use App\Models\Registration;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class RegistrationController extends Controller
 {
+    public function index(): Response
+    {
+        $registrations = Registration::query()
+            ->latest()
+            ->get()
+            ->map(function (Registration $registration) {
+                return [
+                    'id' => $registration->id,
+                    'first_name' => $registration->first_name,
+                    'middle_name' => $registration->middle_name,
+                    'last_name' => $registration->last_name,
+                    'address' => $registration->address,
+                    'birthday' => $registration->birthday,
+                    'parent_name' => $registration->parent_name,
+                    'parent_address' => $registration->parent_address,
+                    'parent_contact_number' => $registration->parent_contact_number,
+                    'photo_path' => $registration->photo_path,
+
+                    // R2 is private, so generate a temporary URL.
+                    'photo_url' => $registration->photo_path
+                        ? Storage::disk('s3')->temporaryUrl(
+                            $registration->photo_path,
+                            now()->addMinutes(30),
+                        )
+                        : null,
+
+                    'created_at' => $registration->created_at,
+                    'updated_at' => $registration->updated_at,
+                ];
+            });
+
+        return Inertia::render('Dashboard/Students', [
+            'registrations' => $registrations,
+        ]);
+    }
+
     public function create(): Response
     {
         return Inertia::render('Registrations/Create');
