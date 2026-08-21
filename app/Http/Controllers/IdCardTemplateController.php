@@ -10,8 +10,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Response;
-use Intervention\Image\Drivers\Gd\Driver;
-use Intervention\Image\ImageManager;
 
 class IdCardTemplateController extends Controller
 {
@@ -135,7 +133,7 @@ class IdCardTemplateController extends Controller
         }
 
         if ($request->filled('search')) {
-            $search = $request->input('search');
+            $search = (string) $request->input('search');
 
             $query->where(function ($query) use ($search) {
                 $query
@@ -286,38 +284,23 @@ class IdCardTemplateController extends Controller
 
         $template = $this->template();
 
-        $photo = $validated['image'];
-
-        $manager = ImageManager::usingDriver(
-            Driver::class
-        );
-
-        $image = $manager->decode(
-            $photo->getRealPath()
-        );
-
-        $image->scaleDown(width: 1200);
-
-        $encoded = $image->encodeUsingFileExtension(
-            'jpg',
-            quality: 85
-        );
-
-        $filename = $side.'-'.uniqid().'.jpg';
-
-        $path = 'id-templates/'.$filename;
-
-        Storage::disk('s3')->put(
-            $path,
-            (string) $encoded,
-            [
-                'ContentType' => 'image/jpeg',
-            ]
-        );
-
         $oldPath = $side === 'front'
             ? $template->front_image_path
             : $template->back_image_path;
+
+        $photo = $validated['image'];
+
+        $extension = strtolower(
+            $photo->getClientOriginalExtension()
+        );
+
+        $filename = $side.'-'.uniqid().'.'.$extension;
+
+        $path = Storage::disk('s3')->putFileAs(
+            'id-templates',
+            $photo,
+            $filename
+        );
 
         $template->update([
             $side.'_image_path' => $path,
