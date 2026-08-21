@@ -74,3 +74,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/id-maker/print', [IdCardTemplateController::class, 'print'])
         ->name('id-maker.print');
 });
+
+Route::get('/debug-auth', function () {
+    return response()->json([
+        'authenticated' => auth()->check(),
+        'user' => auth()->user(),
+        'session_id' => session()->getId(),
+        'session_driver' => config('session.driver'),
+        'session_domain' => config('session.domain'),
+        'session_secure' => config('session.secure'),
+    ]);
+});
