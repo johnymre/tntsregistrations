@@ -11,7 +11,7 @@ RUN npm run build
 # Stage 2: PHP Application Container
 FROM php:8.3-cli
 
-# Install system libraries and build required PHP extensions
+# Install system libraries and required PHP extensions
 RUN apt-get update && apt-get install -y \
     git \
     curl \
@@ -38,8 +38,8 @@ COPY . .
 # Copy compiled Vite assets from Stage 1
 COPY --from=frontend-builder /app/public/build /var/www/html/public/build
 
-# Install PHP dependencies safely
-RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
+# Install PHP production dependencies safely without plugins/scripts blocking build
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts --no-plugins
 
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
