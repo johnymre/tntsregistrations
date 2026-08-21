@@ -8,10 +8,10 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-# Stage 2: PHP Application Container
-FROM php:8.3-fpm
+# Stage 2: PHP Application Container (Explicit PHP 8.3 CLI + FPM)
+FROM php:8.3-cli
 
-# Install system dependencies & PHP extensions required by Composer/Laravel
+# Install system dependencies & PHP extensions
 RUN apt-get update && apt-get install -y \
     git \
     curl \
@@ -22,7 +22,6 @@ RUN apt-get update && apt-get install -y \
     libzip-dev \
     zip \
     unzip \
-    nginx \
     && docker-php-ext-install pdo pdo_pgsql pgsql zip mbstring bcmath
 
 # Set Composer environment limits
@@ -41,7 +40,7 @@ COPY . .
 COPY --from=frontend-builder /app/public/build /var/www/html/public/build
 
 # Install PHP dependencies with platform check ignored
-RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts --ignore-platform-reqs
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
 
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
