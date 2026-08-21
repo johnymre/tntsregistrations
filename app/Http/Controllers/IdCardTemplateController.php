@@ -23,6 +23,30 @@ class IdCardTemplateController extends Controller
         ]);
     }
 
+    private function temporaryUrl(?string $path): ?string
+    {
+        if (! $path) {
+            return null;
+        }
+
+        return Storage::disk('s3')->temporaryUrl(
+            $path,
+            now()->addMinutes(60),
+        );
+    }
+
+    private function studentPhotoUrl(?string $path): ?string
+    {
+        if (! $path) {
+            return null;
+        }
+
+        return Storage::disk('s3')->temporaryUrl(
+            $path,
+            now()->addMinutes(60),
+        );
+    }
+
     public function edit(Request $request): Response
     {
         $template = $this->template();
@@ -31,7 +55,6 @@ class IdCardTemplateController extends Controller
             ->map(fn ($id) => (int) $id)
             ->toArray();
 
-        // Fetch all distinct grade levels from sections.
         $allGrades = DB::table('sections')
             ->whereNotNull('grade_level')
             ->where('grade_level', '!=', '')
@@ -39,29 +62,28 @@ class IdCardTemplateController extends Controller
             ->orderBy('grade_level')
             ->pluck('grade_level');
 
-        // Default to the first grade if not provided or invalid.
         $selectedGrade = $request->input('grade');
 
         if (! $selectedGrade || ! $allGrades->contains($selectedGrade)) {
             $selectedGrade = $allGrades->first() ?? '';
         }
 
-        // Fetch all sections belonging to the selected grade level.
         $availableSections = DB::table('sections')
             ->where('grade_level', $selectedGrade)
             ->orderBy('name')
             ->pluck('name');
 
-        // Default to the first section of that grade.
         $selectedSection = $request->input('section');
 
-        if (! $selectedSection || ! $availableSections->contains($selectedSection)) {
+        if (
+            ! $selectedSection
+            || ! $availableSections->contains($selectedSection)
+        ) {
             $selectedSection = $availableSections->first() ?? '';
         }
 
         $selectedStatus = $request->input('status', 'pending');
 
-        // Query students only for the active section.
         $baseQuery = Registration::query()
             ->leftJoin(
                 'sections',
@@ -87,7 +109,6 @@ class IdCardTemplateController extends Controller
             ])
             ->where('registrations.section', $selectedSection);
 
-        // Calculate status counts for the selected section.
         $sectionStudentIds = (clone $baseQuery)
             ->pluck('registrations.id')
             ->toArray();
@@ -101,14 +122,18 @@ class IdCardTemplateController extends Controller
 
         $query = clone $baseQuery;
 
-        // Filter by active status tab.
         if ($selectedStatus === 'pending') {
-            $query->whereNotIn('registrations.id', $doneStudentIds);
+            $query->whereNotIn(
+                'registrations.id',
+                $doneStudentIds
+            );
         } elseif ($selectedStatus === 'completed') {
-            $query->whereIn('registrations.id', $doneStudentIds);
+            $query->whereIn(
+                'registrations.id',
+                $doneStudentIds
+            );
         }
 
-        // Search filter.
         if ($request->filled('search')) {
             $search = $request->input('search');
 
@@ -116,12 +141,17 @@ class IdCardTemplateController extends Controller
                 $query
                     ->where(
                         'registrations.first_name',
-                        'like',
+                        'ilike',
+                        "%{$search}%"
+                    )
+                    ->orWhere(
+                        'registrations.middle_name',
+                        'ilike',
                         "%{$search}%"
                     )
                     ->orWhere(
                         'registrations.last_name',
-                        'like',
+                        'ilike',
                         "%{$search}%"
                     );
             });
@@ -129,16 +159,43 @@ class IdCardTemplateController extends Controller
 
         $students = $query
             ->orderBy('registrations.last_name')
-            ->get();
+            ->get()
+            ->map(function (Registration $student): array {
+                return [
+                    ...$student->toArray(),
+                    'photo_url' => $this->studentPhotoUrl(
+                        $student->photo_path
+                    ),
+                ];
+            });
+
+        $sample = $students->first();
+
+        if (! $sample) {
+            $fallbackStudent = Registration::first();
+
+            $sample = $fallbackStudent
+                ? [
+                    ...$fallbackStudent->toArray(),
+                    'photo_url' => $this->studentPhotoUrl(
+                        $fallbackStudent->photo_path
+                    ),
+                ]
+                : null;
+        }
 
         return inertia('Dashboard/IdMakerApp', [
             'template' => [
-                'front_image_url' => $template->front_image_url,
-                'back_image_url' => $template->back_image_url,
+                'front_image_url' => $this->temporaryUrl(
+                    $template->front_image_path
+                ),
+                'back_image_url' => $this->temporaryUrl(
+                    $template->back_image_path
+                ),
                 'front_layout' => $template->front_layout ?? [],
                 'back_layout' => $template->back_layout ?? [],
             ],
-            'sample' => $students->first() ?? Registration::first(),
+            'sample' => $sample,
             'students' => $students,
             'done_student_ids' => $doneStudentIds,
             'grades' => $allGrades,
@@ -166,7 +223,10 @@ class IdCardTemplateController extends Controller
 
         $this->template()->update($validated);
 
-        return back();
+        return back()->with(
+            'success',
+            'ID template saved.'
+        );
     }
 
     public function markDone(Request $request): RedirectResponse
@@ -210,9 +270,12 @@ class IdCardTemplateController extends Controller
         Request $request,
         string $side
     ): RedirectResponse {
-        abort_unless(in_array($side, ['front', 'back'], true), 404);
+        abort_unless(
+            in_array($side, ['front', 'back'], true),
+            404
+        );
 
-        $request->validate([
+        $validated = $request->validate([
             'image' => [
                 'required',
                 'image',
@@ -223,21 +286,15 @@ class IdCardTemplateController extends Controller
 
         $template = $this->template();
 
-        $oldPath = $side === 'front'
-            ? $template->front_image_path
-            : $template->back_image_path;
-
-        if ($oldPath) {
-            Storage::disk('public')->delete($oldPath);
-        }
-
-        $photo = $request->file('image');
+        $photo = $validated['image'];
 
         $manager = ImageManager::usingDriver(
             Driver::class
         );
 
-        $image = $manager->decode($photo->getRealPath());
+        $image = $manager->decode(
+            $photo->getRealPath()
+        );
 
         $image->scaleDown(width: 1200);
 
@@ -247,18 +304,33 @@ class IdCardTemplateController extends Controller
         );
 
         $filename = $side.'-'.uniqid().'.jpg';
+
         $path = 'id-templates/'.$filename;
 
-        Storage::disk('public')->put(
+        Storage::disk('s3')->put(
             $path,
-            (string) $encoded
+            (string) $encoded,
+            [
+                'ContentType' => 'image/jpeg',
+            ]
         );
+
+        $oldPath = $side === 'front'
+            ? $template->front_image_path
+            : $template->back_image_path;
 
         $template->update([
             $side.'_image_path' => $path,
         ]);
 
-        return back();
+        if ($oldPath && $oldPath !== $path) {
+            Storage::disk('s3')->delete($oldPath);
+        }
+
+        return back()->with(
+            'success',
+            ucfirst($side).' background updated.'
+        );
     }
 
     public function print(Request $request): Response
@@ -300,12 +372,25 @@ class IdCardTemplateController extends Controller
             );
         }
 
-        $students = $query->get();
+        $students = $query
+            ->get()
+            ->map(function (Registration $student): array {
+                return [
+                    ...$student->toArray(),
+                    'photo_url' => $this->studentPhotoUrl(
+                        $student->photo_path
+                    ),
+                ];
+            });
 
         return inertia('Dashboard/IdMakerPrint', [
             'template' => [
-                'front_image_url' => $template->front_image_url,
-                'back_image_url' => $template->back_image_url,
+                'front_image_url' => $this->temporaryUrl(
+                    $template->front_image_path
+                ),
+                'back_image_url' => $this->temporaryUrl(
+                    $template->back_image_path
+                ),
                 'front_layout' => $template->front_layout ?? [],
                 'back_layout' => $template->back_layout ?? [],
             ],
