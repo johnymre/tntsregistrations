@@ -12,7 +12,7 @@ class RegistrationController extends Controller
 {
     public function create(): Response
     {
-        return Inertia::render('TntsRegistration');
+        return Inertia::render('Registrations/Create');
     }
 
     public function store(Request $request): RedirectResponse
