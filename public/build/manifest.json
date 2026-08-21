@@ -1,20 +1,20 @@
 {
-  "_AppLayout-D1ogREFP.js": {
-    "file": "assets/AppLayout-D1ogREFP.js",
+  "_AppLayout-DD4nfF5N.js": {
+    "file": "assets/AppLayout-DD4nfF5N.js",
     "name": "AppLayout",
     "imports": [
       "resources/js/app.ts"
     ]
   },
-  "_IdCardFace-DLpuw7Lc.js": {
-    "file": "assets/IdCardFace-DLpuw7Lc.js",
+  "_IdCardFace-DjVWTSlc.js": {
+    "file": "assets/IdCardFace-DjVWTSlc.js",
     "name": "IdCardFace",
     "imports": [
       "resources/js/app.ts"
     ]
   },
   "resources/css/app.css": {
-    "file": "assets/app-DfU2tdbM.css",
+    "file": "assets/app-D5fvTSFY.css",
     "name": "app",
     "names": [
       "app.css"
@@ -23,7 +23,7 @@
     "isEntry": true
   },
   "resources/js/app.ts": {
-    "file": "assets/app-C84Qgip1.js",
+    "file": "assets/app-BwIjIEiR.js",
     "name": "app",
     "src": "resources/js/app.ts",
     "isEntry": true,
@@ -41,7 +41,7 @@
     ]
   },
   "resources/js/pages/Auth/Login.vue": {
-    "file": "assets/Login-DBDSHRQd.js",
+    "file": "assets/Login-CejY7agu.js",
     "name": "Login",
     "src": "resources/js/pages/Auth/Login.vue",
     "isDynamicEntry": true,
@@ -50,7 +50,7 @@
     ]
   },
   "resources/js/pages/Auth/Register.vue": {
-    "file": "assets/Register-35U1ruO0.js",
+    "file": "assets/Register-BC7wQ36e.js",
     "name": "Register",
     "src": "resources/js/pages/Auth/Register.vue",
     "isDynamicEntry": true,
@@ -59,41 +59,41 @@
     ]
   },
   "resources/js/pages/Dashboard/Dashboard.vue": {
-    "file": "assets/Dashboard-BJ4Y1BGF.js",
+    "file": "assets/Dashboard-1xgi7v2_.js",
     "name": "Dashboard",
     "src": "resources/js/pages/Dashboard/Dashboard.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.ts",
-      "_AppLayout-D1ogREFP.js"
+      "_AppLayout-DD4nfF5N.js"
     ]
   },
   "resources/js/pages/Dashboard/IdMakerApp.vue": {
-    "file": "assets/IdMakerApp-DNiaJj0P.js",
+    "file": "assets/IdMakerApp-BYKPxJRF.js",
     "name": "IdMakerApp",
     "src": "resources/js/pages/Dashboard/IdMakerApp.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.ts",
-      "_AppLayout-D1ogREFP.js",
-      "_IdCardFace-DLpuw7Lc.js"
+      "_AppLayout-DD4nfF5N.js",
+      "_IdCardFace-DjVWTSlc.js"
     ]
   },
   "resources/js/pages/Dashboard/IdMakerPrint.vue": {
-    "file": "assets/IdMakerPrint-SacS-Z4e.js",
+    "file": "assets/IdMakerPrint-BJNmQ4HY.js",
     "name": "IdMakerPrint",
     "src": "resources/js/pages/Dashboard/IdMakerPrint.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.ts",
-      "_IdCardFace-DLpuw7Lc.js"
+      "_IdCardFace-DjVWTSlc.js"
     ],
     "css": [
       "assets/IdMakerPrint-C7ewSC_9.css"
     ]
   },
   "resources/js/pages/Dashboard/SchoolYear.vue": {
-    "file": "assets/SchoolYear-8bwVTRvb.js",
+    "file": "assets/SchoolYear-DJvVV3xs.js",
     "name": "SchoolYear",
     "src": "resources/js/pages/Dashboard/SchoolYear.vue",
     "isDynamicEntry": true,
@@ -102,27 +102,27 @@
     ]
   },
   "resources/js/pages/Dashboard/Sectioning.vue": {
-    "file": "assets/Sectioning-D0gzPG3b.js",
+    "file": "assets/Sectioning-B75LWb_C.js",
     "name": "Sectioning",
     "src": "resources/js/pages/Dashboard/Sectioning.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.ts",
-      "_AppLayout-D1ogREFP.js"
+      "_AppLayout-DD4nfF5N.js"
     ]
   },
   "resources/js/pages/Dashboard/Students.vue": {
-    "file": "assets/Students-D39hEfcM.js",
+    "file": "assets/Students-XUKcew_x.js",
     "name": "Students",
     "src": "resources/js/pages/Dashboard/Students.vue",
     "isDynamicEntry": true,
     "imports": [
       "resources/js/app.ts",
-      "_AppLayout-D1ogREFP.js"
+      "_AppLayout-DD4nfF5N.js"
     ]
   },
   "resources/js/pages/Registrations/Create.vue": {
-    "file": "assets/Create-DsyGHqYf.js",
+    "file": "assets/Create-CQkyifxj.js",
     "name": "Create",
     "src": "resources/js/pages/Registrations/Create.vue",
     "isDynamicEntry": true,
@@ -131,7 +131,7 @@
     ]
   },
   "resources/js/pages/Welcome.vue": {
-    "file": "assets/Welcome-DYXg62Ph.js",
+    "file": "assets/Welcome-zu3jY444.js",
     "name": "Welcome",
     "src": "resources/js/pages/Welcome.vue",
     "isDynamicEntry": true,
