@@ -6,7 +6,6 @@ use App\Http\Controllers\IdCardTemplateController;
 use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\SectionController;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Storage;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -74,30 +73,4 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/id-maker/print', [IdCardTemplateController::class, 'print'])
         ->name('id-maker.print');
-});
-
-Route::get('/debug-auth', function () {
-    return response()->json([
-        'authenticated' => auth()->check(),
-        'user' => auth()->user(),
-        'session_id' => session()->getId(),
-        'session_driver' => config('session.driver'),
-        'session_domain' => config('session.domain'),
-        'session_secure' => config('session.secure'),
-    ]);
-});
-
-Route::get('/debug-r2', function () {
-    $path = 'debug/render-r2-test.txt';
-
-    Storage::disk('s3')->put(
-        $path,
-        'Render successfully connected to Cloudflare R2.'
-    );
-
-    return response()->json([
-        'uploaded' => Storage::disk('s3')->exists($path),
-        'path' => $path,
-        'disk' => config('filesystems.default'),
-    ]);
 });

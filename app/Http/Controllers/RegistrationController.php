@@ -5,22 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Registration;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
-use Inertia\Response;
 
 class RegistrationController extends Controller
 {
-    /**
-     * Show the registration form.
-     */
-    public function create(): Response
-    {
-        return Inertia::render('Registrations/Create');
-    }
-
-    /**
-     * Save a new registration.
-     */
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
@@ -42,11 +29,12 @@ class RegistrationController extends Controller
             'address' => [
                 'required',
                 'string',
-                'max:255',
+                'max:1000',
             ],
             'birthday' => [
                 'required',
                 'date',
+                'before_or_equal:today',
             ],
             'parent_name' => [
                 'required',
@@ -56,67 +44,44 @@ class RegistrationController extends Controller
             'parent_address' => [
                 'required',
                 'string',
-                'max:255',
+                'max:1000',
             ],
             'parent_contact_number' => [
                 'required',
                 'string',
-                'max:50',
+                'max:20',
             ],
-            'photo_path' => [
+            'photo' => [
                 'nullable',
-                'string',
-                'max:255',
-            ],
-            'school_year' => [
-                'nullable',
-                'string',
-                'max:255',
-            ],
-            'section' => [
-                'nullable',
-                'string',
-                'max:255',
-            ],
-            'adviser' => [
-                'nullable',
-                'string',
-                'max:255',
+                'image',
+                'mimes:jpeg,jpg,png,webp',
+                'max:20480',
             ],
         ]);
 
-        Registration::create($validated);
+        $photoPath = null;
 
-        return back()->with('flash', [
-            'success' => 'Registration submitted successfully!',
+        if ($request->hasFile('photo')) {
+            $photoPath = $request
+                ->file('photo')
+                ->store('registrations/photos', 's3');
+        }
+
+        Registration::create([
+            'first_name' => $validated['first_name'],
+            'middle_name' => $validated['middle_name'] ?? null,
+            'last_name' => $validated['last_name'],
+            'address' => $validated['address'],
+            'birthday' => $validated['birthday'],
+            'parent_name' => $validated['parent_name'],
+            'parent_address' => $validated['parent_address'],
+            'parent_contact_number' => $validated['parent_contact_number'],
+            'photo_path' => $photoPath,
         ]);
-    }
 
-    /**
-     * Display registrations.
-     */
-    public function index(Request $request): Response
-    {
-        $search = $request->query('search');
-
-        $registrations = Registration::query()
-            ->when(
-                is_string($search) && $search !== '',
-                function ($query) use ($search) {
-                    $query
-                        ->where('first_name', 'like', "%{$search}%")
-                        ->orWhere('last_name', 'like', "%{$search}%");
-                }
-            )
-            ->latest()
-            ->paginate(20)
-            ->withQueryString();
-
-        return Inertia::render('Dashboard/Students', [
-            'registrations' => $registrations,
-            'filters' => [
-                'search' => is_string($search) ? $search : '',
-            ],
-        ]);
+        return back()->with(
+            'success',
+            'Registration submitted successfully.',
+        );
     }
 }
