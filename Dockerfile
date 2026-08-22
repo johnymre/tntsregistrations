@@ -17,6 +17,15 @@ RUN npm run build
 # ============================================
 FROM php:8.4-cli
 
+# PHP upload limits
+RUN printf '%s\n' \
+    'upload_max_filesize=20M' \
+    'post_max_size=25M' \
+    'memory_limit=256M' \
+    'max_execution_time=300' \
+    'max_input_time=300' \
+    > /usr/local/etc/php/conf.d/laravel.ini
+
 RUN apt-get update && apt-get install -y \
     git \
     curl \
