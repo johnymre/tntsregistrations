@@ -9,7 +9,9 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
-use Intervention\Image\Laravel\Facades\Image;
+use Intervention\Image\Drivers\Gd\Driver;
+use Intervention\Image\Format;
+use Intervention\Image\ImageManager;
 
 class RegistrationController extends Controller
 {
@@ -125,15 +127,21 @@ class RegistrationController extends Controller
         if ($request->hasFile('photo')) {
             $photo = $request->file('photo');
 
-            $image = Image::read($photo);
+            $manager = ImageManager::usingDriver(
+                Driver::class,
+            );
+
+            $image = $manager->decodePath(
+                $photo->getRealPath(),
+            );
 
             $image->scaleDown(
                 width: 1920,
             );
 
-            $encoded = $image->toWebp(
+            $encoded = $image->encodeUsingFormat(
+                Format::WEBP,
                 quality: 80,
-                strip: true,
             );
 
             $photoPath = sprintf(
@@ -143,7 +151,7 @@ class RegistrationController extends Controller
 
             Storage::disk('s3')->put(
                 $photoPath,
-                (string) $encoded,
+                $encoded->toString(),
             );
         }
 
