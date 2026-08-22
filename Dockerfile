@@ -24,6 +24,7 @@ RUN apt-get update && apt-get install -y \
     libfreetype6-dev \
     libjpeg62-turbo-dev \
     libpng-dev \
+    libwebp-dev \
     libonig-dev \
     libxml2-dev \
     libpq-dev \
@@ -34,6 +35,7 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-configure gd \
         --with-freetype \
         --with-jpeg \
+        --with-webp \
     && docker-php-ext-install \
         gd \
         pdo \
@@ -76,6 +78,7 @@ COPY composer.json composer.lock ./
 
 RUN php -v \
     && php -m \
+    && php -r "var_export(gd_info());" \
     && composer --version
 
 RUN composer install \
