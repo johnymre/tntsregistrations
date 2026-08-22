@@ -6,8 +6,10 @@ use App\Models\Registration;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
+use Intervention\Image\Laravel\Facades\Image;
 
 class RegistrationController extends Controller
 {
@@ -121,9 +123,28 @@ class RegistrationController extends Controller
         $photoPath = null;
 
         if ($request->hasFile('photo')) {
-            $photoPath = $request
-                ->file('photo')
-                ->store('registrations/photos', 's3');
+            $photo = $request->file('photo');
+
+            $image = Image::read($photo);
+
+            $image->scaleDown(
+                width: 1920,
+            );
+
+            $encoded = $image->toWebp(
+                quality: 80,
+                strip: true,
+            );
+
+            $photoPath = sprintf(
+                'registrations/photos/%s.webp',
+                Str::uuid(),
+            );
+
+            Storage::disk('s3')->put(
+                $photoPath,
+                (string) $encoded,
+            );
         }
 
         Registration::create([

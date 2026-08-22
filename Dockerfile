@@ -15,20 +15,14 @@ RUN npm run build
 # ============================================
 # Stage 2: PHP / Laravel application
 # ============================================
-FROM php:8.4-cli
-
-# PHP upload limits
-RUN printf '%s\n' \
-    'upload_max_filesize=20M' \
-    'post_max_size=25M' \
-    'memory_limit=256M' \
-    'max_execution_time=300' \
-    'max_input_time=300' \
-    > /usr/local/etc/php/conf.d/laravel.ini
+FROM php:8.4-fpm
 
 RUN apt-get update && apt-get install -y \
+    nginx \
     git \
     curl \
+    libfreetype6-dev \
+    libjpeg62-turbo-dev \
     libpng-dev \
     libonig-dev \
     libxml2-dev \
@@ -37,7 +31,11 @@ RUN apt-get update && apt-get install -y \
     libicu-dev \
     zip \
     unzip \
+    && docker-php-ext-configure gd \
+        --with-freetype \
+        --with-jpeg \
     && docker-php-ext-install \
+        gd \
         pdo \
         pdo_pgsql \
         pgsql \
@@ -48,7 +46,22 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+
+# ============================================
+# PHP configuration
+# ============================================
+RUN printf '%s\n' \
+    'upload_max_filesize=20M' \
+    'post_max_size=25M' \
+    'memory_limit=256M' \
+    'max_execution_time=300' \
+    'max_input_time=300' \
+    > /usr/local/etc/php/conf.d/laravel.ini
+
+
+# ============================================
 # Composer
+# ============================================
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 ENV COMPOSER_ALLOW_SUPERUSER=1
@@ -61,8 +74,9 @@ WORKDIR /var/www/html
 # ============================================
 COPY composer.json composer.lock ./
 
-# Helpful diagnostics for Render logs
-RUN php -v && php -m && composer --version
+RUN php -v \
+    && php -m \
+    && composer --version
 
 RUN composer install \
     --no-dev \
@@ -99,7 +113,8 @@ RUN composer dump-autoload \
 # ============================================
 # Laravel permissions
 # ============================================
-RUN mkdir -p storage/framework/cache \
+RUN mkdir -p \
+    storage/framework/cache \
     storage/framework/sessions \
     storage/framework/views \
     storage/logs \
